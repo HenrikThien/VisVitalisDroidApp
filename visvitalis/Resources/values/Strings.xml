@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">VIS VITALIS</string>
+
+	<!-- Login screen -->
+	<string name="login_title">Mitarbeiter Login</string>
+</resources>
