@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<resources>
+  <style name="CustomAppTheme" parent="android:Theme.Holo.Light">
+    <item name="android:windowBackground">@color/background</item>
+    <item name="android:windowTranslucentStatus">false</item>
+    <item name="android:windowTranslucentNavigation">false</item>
+    <item name="android:fitsSystemWindows">false</item>
+    <item name="android:actionBarStyle">@style/ActionBar.Solid.KitKat</item>
+  </style>
+  <style name="ActionBar.Solid.KitKat" parent="@android:style/Widget.Holo.Light.ActionBar.Solid">
+        <item name="android:background">@color/colorPrimary</item>
+  </style>
+</resources>

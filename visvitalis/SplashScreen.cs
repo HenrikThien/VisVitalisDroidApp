@@ -24,12 +24,8 @@ namespace visvitalis
 			waitForIt ();
         }
 
-		async void waitForIt()
+		void waitForIt()
 		{
-			await Task.Run (() => {
-				Thread.Sleep(1000);
-			});
-
 			var intent = new Intent ();
 			intent.SetClass (this, typeof(LoginActivity));
 			StartActivity (intent);

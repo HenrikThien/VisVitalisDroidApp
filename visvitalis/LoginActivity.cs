@@ -15,6 +15,7 @@ using Android.Text.Style;
 using System.Threading.Tasks;
 using System.Threading;
 using visvitalis.Networking;
+using Android.Gms.Common;
 
 namespace visvitalis
 {
@@ -30,8 +31,7 @@ namespace visvitalis
 
 			ActionBar.SetDisplayShowHomeEnabled (true);
 
-			ActionBar.SetIcon (this.GetDrawable (Resource.Drawable.ic_launcher));
-
+			ActionBar.SetIcon (Resources.GetDrawable (Resource.Drawable.ic_launcher));
 
 			var typeface = Typeface.CreateFromAsset (this.Assets, "fonts/Generica.otf");
 			var loginTitle = FindViewById<TextView> (Resource.Id.textView1);
@@ -45,6 +45,12 @@ namespace visvitalis
 			ActionBar.TitleFormatted = st;
 
             var loginBtn = FindViewById<Button>(Resource.Id.button1);
+
+            if (!IsPlayServiceAvailable())
+            {
+                loginBtn.Enabled = false;
+            }
+
             loginBtn.Click += LoginBtn_Click;
         }
 
@@ -64,13 +70,20 @@ namespace visvitalis
             {
                 using (var connector = new ServerConnector())
                 {
-                    if (await connector.IsServerAvailableAsync())
+                    if (await connector.IsNetworkAvailable(this))
                     {
+                        if (await connector.IsServerAvailableAsync())
+                        {
 
+                        }
+                        else
+                        {
+                            CreateAlert("Fehler", "Der Server konnte nicht kontaktiert werden!");
+                        }
                     }
                     else
                     {
-                        CreateAlert("Fehler", "Der Server konnte nicht kontaktiert werden!");
+                        CreateAlert("Fehler", "Sie müssen eine Internetverbindung herstellen!");
                         return;
                     }
                 }
@@ -100,6 +113,27 @@ namespace visvitalis
             alert.SetMessage(message);
             alert.SetPositiveButton("Ok", (sender, args) => { alert.Dispose(); });
             alert.Show();
+        }
+
+        bool IsPlayServiceAvailable()
+        {
+            int resultCode = GooglePlayServicesUtil.IsGooglePlayServicesAvailable(this);
+
+            if (resultCode != ConnectionResult.Success)
+            {
+                if (GooglePlayServicesUtil.IsUserRecoverableError(resultCode))
+                {
+                    CreateAlert("Fehler", GooglePlayServicesUtil.GetErrorString(resultCode));
+                }
+                else
+                {
+                    CreateAlert("Fehler", "Dieses Gerät wird nicht unterstützt. Der Google Playstore fehlt.");
+                }
+
+                return false;
+            }
+
+            return true;
         }
     }
 }

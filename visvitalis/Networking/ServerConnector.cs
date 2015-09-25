@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Android.Content;
 using Java.Net;
 using visvitalis.Utils;
+using Android.Net.Wifi;
+using Android.Net;
 
 namespace visvitalis.Networking
 {
@@ -18,7 +20,10 @@ namespace visvitalis.Networking
 
         public async Task LoginAsync(string groupname, string password)
         {
-            throw new NotImplementedException();
+            //using (var client = new HttpClient())
+            //{
+
+            //}
         }
 
         /// <summary>
@@ -41,6 +46,43 @@ namespace visvitalis.Networking
             {
                 available = false;
             }
+
+            return available;
+        }
+
+        public async Task<bool> IsNetworkAvailable(Context Context)
+        {
+            var available = false;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    ConnectivityManager cm = (ConnectivityManager)Context.GetSystemService(Context.ConnectivityService);
+                    var networkInfo = cm.GetNetworkInfo(ConnectivityType.Wifi);
+
+                    available = networkInfo.IsConnectedOrConnecting;
+                }
+                catch
+                {
+                    available = false;
+                }
+
+                if (!available)
+                {
+                    try
+                    {
+                        ConnectivityManager cm = (ConnectivityManager)Context.GetSystemService(Context.ConnectivityService);
+                        var networkInfo = cm.ActiveNetworkInfo;
+
+                        available = (networkInfo != null && networkInfo.IsConnectedOrConnecting);
+                    }
+                    catch
+                    {
+                        available = false;
+                    }
+                }
+            });
 
             return available;
         }
