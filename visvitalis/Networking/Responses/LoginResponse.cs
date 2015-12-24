@@ -1,21 +1,18 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
+using Newtonsoft.Json;
 
 namespace visvitalis.Networking.Responses
 {
     public class LoginResponse
     {
-        public string Username { get; set; }
+        [JsonProperty("valid")]
+        public bool Valid { get; set; }
+        [JsonProperty("groupname")]
+        public string Groupname { get; set; }
+        [JsonProperty("password")]
         public string Password { get; set; }
-        public AccessTokenResponse AccessTokenResponse { get; set; }
+        [JsonProperty("client_id")]
+        public string ClientId { get; set; }
+        [JsonProperty("client_secret")]
+        public string ClientSecret { get; set; }
     }
 }

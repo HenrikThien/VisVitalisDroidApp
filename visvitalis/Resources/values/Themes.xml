@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+  <style name="Theme.Main" parent="android:Theme.Holo.Light">
+
+    <item name="android:editTextBackground">@drawable/thememain_edit_text_holo_light</item>
+
+    <item name="android:textColorHighlight">#99c64b57</item>
+    <item name="android:textSelectHandleLeft">@drawable/thememain_text_select_handle_left</item>
+    <item name="android:textSelectHandleRight">@drawable/thememain_text_select_handle_right</item>
+    <item name="android:textSelectHandle">@drawable/thememain_text_select_handle_middle</item>
+
+    <item name="android:autoCompleteTextViewStyle">@style/AutoCompleteTextViewthememain</item>
+    <item name="android:listChoiceIndicatorMultiple">@drawable/thememain_btn_check_holo_light</item>
+    <item name="android:listChoiceIndicatorSingle">@drawable/thememain_btn_radio_holo_light</item>
+
+    <!--<item name="android:buttonStyle">@style/Buttonthememain</item>
+
+    <item name="android:imageButtonStyle">@style/ImageButtonthememain</item>-->
+
+    <item name="android:dropDownSpinnerStyle">@style/Spinnerthememain</item>
+    <item name="android:progressBarStyleHorizontal">@style/ProgressBarthememain</item>
+    <item name="android:seekBarStyle">@style/SeekBarthememain</item>
+    <item name="android:ratingBarStyle">@style/RatingBarthememain</item>
+    <item name="android:ratingBarStyleIndicator">@style/RatingBarBigthememain</item>
+    <item name="android:ratingBarStyleSmall">@style/RatingBarSmallthememain</item>
+    <item name="android:buttonStyleToggle">@style/Togglethememain</item>
+    <item name="android:listChoiceBackgroundIndicator">@drawable/thememain_list_selector_holo_light</item>
+    <item name="android:activatedBackgroundIndicator">@drawable/thememain_activated_background_holo_light</item>
+    <item name="android:fastScrollThumbDrawable">@drawable/thememain_fastscroll_thumb_holo</item>
+
+  </style>
+</resources>

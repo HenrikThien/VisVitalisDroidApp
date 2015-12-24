@@ -16,10 +16,14 @@ using System.Threading.Tasks;
 using System.Threading;
 using visvitalis.Networking;
 using Android.Gms.Common;
+using visvitalis.NotificationService;
+using Android.Preferences;
+using visvitalis.Utils;
+using Android.Util;
 
 namespace visvitalis
 {
-	[Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/CustomAppTheme")]
+	[Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main", NoHistory = true)]
     public class LoginActivity : Activity
     {
         private ProgressDialog _progressDialog;
@@ -45,13 +49,17 @@ namespace visvitalis
 			ActionBar.TitleFormatted = st;
 
             var loginBtn = FindViewById<Button>(Resource.Id.button1);
+            CheckPlayService(loginBtn);
 
-            if (!IsPlayServiceAvailable())
+            loginBtn.Click += LoginBtn_Click;
+        }
+
+        async void CheckPlayService(Button loginBtn)
+        {
+            if (!await IsPlayServiceAvailable())
             {
                 loginBtn.Enabled = false;
             }
-
-            loginBtn.Click += LoginBtn_Click;
         }
 
         async void LoginBtn_Click(object sender, EventArgs e)
@@ -74,11 +82,47 @@ namespace visvitalis
                     {
                         if (await connector.IsServerAvailableAsync())
                         {
+                            var preferences = PreferenceManager.GetDefaultSharedPreferences(this);
+                            var editor = preferences.Edit();
+                            editor.PutString(AppConstants.GroupName, groupname.ToLower());
+                            editor.Commit();
 
+                            var loginResponse = await connector.LoginAsync(groupname, password);
+
+                            if (loginResponse != null)
+                            {
+                                if (loginResponse.Valid)
+                                {
+                                    var accessTokenResponse = await connector.RequestAsyncTokenAsync(loginResponse);
+
+                                    var intent = new Intent(this, typeof(RegistrationIntentService));
+                                    StartService(intent);
+
+                                    StaticHolder.SessionHolder.AccessTokenResponse = accessTokenResponse;
+                                    StaticHolder.SessionHolder.LoginResponse = loginResponse;
+
+                                    await StaticHolder.SaveSessionAsync(this);
+
+                                    var mainintent = new Intent();
+                                    mainintent.SetClass(this, typeof(MainActivity));
+                                    StartActivity(mainintent);
+                                }
+                                else
+                                {
+                                    CreateAlert("Fehler", "Es ist ein Fehler beim Login aufgetreten, versuchen Sie es später erneut!");
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                CreateAlert("Fehler", "Es ist ein Fehler beim Login aufgetreten, versuchen Sie es später erneut!");
+                                return;
+                            }
                         }
                         else
                         {
                             CreateAlert("Fehler", "Der Server konnte nicht kontaktiert werden!");
+                            return;
                         }
                     }
                     else
@@ -115,21 +159,13 @@ namespace visvitalis
             alert.Show();
         }
 
-        bool IsPlayServiceAvailable()
+        async Task<bool> IsPlayServiceAvailable()
         {
-            int resultCode = GooglePlayServicesUtil.IsGooglePlayServicesAvailable(this);
+            int resultCode = await Task.Factory.StartNew(() => GooglePlayServicesUtil.IsGooglePlayServicesAvailable(this));
 
             if (resultCode != ConnectionResult.Success)
             {
-                if (GooglePlayServicesUtil.IsUserRecoverableError(resultCode))
-                {
-                    CreateAlert("Fehler", GooglePlayServicesUtil.GetErrorString(resultCode));
-                }
-                else
-                {
-                    CreateAlert("Fehler", "Dieses Gerät wird nicht unterstützt. Der Google Playstore fehlt.");
-                }
-
+                CreateAlert("Fehler", "Dieses Gerät wird nicht unterstützt. Der Google Playstore fehlt.");
                 return false;
             }
 

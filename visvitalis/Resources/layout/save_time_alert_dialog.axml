@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:vvui="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    <visvitalis.utils.FontTextView
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        vvui:customTypeface="fonts/Champ.ttf"
+        android:id="@+id/alertTitle"
+        android:layout_marginLeft="10dp" />
+    <visvitalis.utils.FontTextView
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/alertDescription"
+        android:textColor="#ffc81515"
+        vvui:customTypeface="fonts/Champ.ttf"
+        android:layout_marginTop="5dp"
+        android:layout_marginLeft="10dp" />
+    <LinearLayout
+        android:orientation="horizontal"
+        android:minWidth="25px"
+        android:minHeight="25px"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/linearLayout1"
+        android:layout_marginTop="15dp">
+        <EditText
+            android:hint="Kilometer"
+            android:id="@+id/kmEditText"
+            android:inputType="numberDecimal"
+            android:layout_height="45.0dp"
+            android:layout_weight="1"
+            android:layout_width="fill_parent" />
+        <Button
+            android:text="Kilometer speichern"
+            android:id="@+id/button3"
+            android:layout_marginLeft="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#ff65ae59"
+            android:typeface="normal"
+            android:textStyle="normal"
+            android:padding="10dp" />
+    </LinearLayout>
+    <Button
+        android:text="Ankunft speichern"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button1"
+        android:layout_marginTop="25dp"
+        android:background="#ff65ae59"
+        android:typeface="normal"
+        android:textStyle="normal" />
+    <Button
+        android:text="Abfahrt speichern"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button2"
+        android:background="#ff65ae59"
+        android:layout_marginTop="5dp"
+        android:typeface="normal"
+        android:textStyle="normal"
+        android:fadingEdge="none" />
+</LinearLayout>

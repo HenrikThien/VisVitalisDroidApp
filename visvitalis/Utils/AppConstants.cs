@@ -1,19 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-
 namespace visvitalis.Utils
 {
     public static class AppConstants
     {
-        public const string ServerIP = "192.168.178.41";
+        public const string GoogleAPIServerId = "457315125602";
+        public const string ServerIP = "192.168.178.34";
+        public const string DeviceToken = "DEVICE_TOKEN";
+        public const string GroupName = "GROUP_NAME";
+        public const string Session = "SESSION";
+        public const string JsonMask = "JSON_MASK";
+        public const string DataFolder = "visvitalisdata";
+        public const string FileDate = "FILE_DATE";
+        public const string FileWorkerToken = "FILE_WORKER_TOKEN";
     }
 }

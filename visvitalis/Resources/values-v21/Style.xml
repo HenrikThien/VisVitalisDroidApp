@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <resources>
-  <!-- Base application theme. -->
-  <style name="CustomAppTheme" parent="android:Theme.Material.Light">
-    <item name="android:colorPrimary">@color/colorPrimary</item>
+  <style name="Theme.Main" parent="@android:style/Theme.Material">
+    <item name="android:colorBackground">@android:color/white</item>
+    <item name="android:windowBackground">@android:color/white</item>
+    <item name="android:windowContentOverlay">@null</item>
     <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
-    <!-- <item name="android:colorAccent">@color/colorAccent</item> -->
-    <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+    <item name="android:colorPrimary">@color/colorPrimary</item>
   </style>
 </resources>
