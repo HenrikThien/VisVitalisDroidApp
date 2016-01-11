@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChatActivity.cs" />
+    <Compile Include="CreateMaskActivity.cs" />
     <Compile Include="Encryption\AesToPhp.cs" />
     <Compile Include="Encryption\ChatEncryption.cs" />
     <Compile Include="Encryption\EncryptionUtility.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="Fragments\ActionBarTabListener.cs" />
     <Compile Include="Fragments\ChatAdapter.cs" />
     <Compile Include="Fragments\ChatMessage.cs" />
+    <Compile Include="Fragments\CreateMaskAdapter.cs" />
     <Compile Include="Fragments\CustomAdapter.cs" />
     <Compile Include="Fragments\Message.cs" />
     <Compile Include="Fragments\TabFragment.cs" />
@@ -152,6 +154,12 @@
     <AndroidResource Include="Resources\layout\chat_activity_list_item.axml">
       <SubType>AndroidResource</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\change_patient_performance_alert_dialog.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\CreateMaskLayout.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\values\Strings.xml" />
@@ -168,9 +176,6 @@
     <AndroidResource Include="Resources\values\Colors.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
-  <ItemGroup>
-    <AndroidResource Include="Resources\values-v19\Style.xml" />
-  </ItemGroup>
   <ItemGroup>
     <AndroidAsset Include="Assets\fonts\Generica.otf" />
   </ItemGroup>
@@ -620,9 +625,6 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable-xxhdpi\thememain_textfield_focused_holo_light.9.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <AndroidResource Include="Resources\values\Themes.xml" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\thememain_activated_background_holo_light.xml" />
@@ -1772,5 +1774,14 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\drawable-xxhdpi\thememain_tab_unselected_pressed_holo.9.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\anim\from_left.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\anim\to_left.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\anim\hold.xml" />
   </ItemGroup>
 </Project>

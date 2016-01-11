@@ -59,6 +59,9 @@ namespace visvitalis
                         if (content == "[]")
                         {
                             Toast.MakeText(this, "Es existiert keine Datei für das Datum!", ToastLength.Long).Show();
+                            var intent = new Intent();
+                            intent.SetClass(this, typeof(CreateMaskActivity));
+                            StartActivity(intent);
                             return;
                         }
 
@@ -115,13 +118,13 @@ namespace visvitalis
                 case Android.Resource.Id.Home:
                     Finish();
                     return true;
-                case Resource.Id.showChat:
-                    {
-                        var intent = new Intent();
-                        intent.SetClass(this, typeof(ChatActivity));
-                        StartActivity(intent);
-                        return true;
-                    }
+                //case Resource.Id.showChat:
+                //    {
+                //        var intent = new Intent();
+                //        intent.SetClass(this, typeof(ChatActivity));
+                //        StartActivity(intent);
+                //        return true;
+                //    }
                 default:
                     return base.OnOptionsItemSelected(menu);
             }

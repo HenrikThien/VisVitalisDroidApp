@@ -1,16 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using System.IO;
-using Android.Util;
 using System.Threading.Tasks;
 using System.Globalization;
 
@@ -30,7 +19,10 @@ namespace visvitalis.Utils
 
         public async Task<string> LoadFileAsync()
         {
-            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), GetIso8601WeekOfYear(_dateTime).ToString());
+            var weekId = GetIso8601WeekOfYear(_dateTime);
+            var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
+
+            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), newWeekId);
             var filePath = Path.Combine(directoryPath, _date + ".json");
 
             var fileContent = "";
@@ -75,7 +67,10 @@ namespace visvitalis.Utils
 
         public async Task<bool> SaveJsonContentAsync(string content)
         {
-            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), GetIso8601WeekOfYear(_dateTime).ToString());
+            var weekId = GetIso8601WeekOfYear(_dateTime);
+            var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
+
+            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), newWeekId);
             var filePath = Path.Combine(directoryPath, _date + ".json");
             var success = false;
 

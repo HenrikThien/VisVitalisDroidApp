@@ -29,15 +29,14 @@
         android:id="@+id/linearLayout1"
         android:layout_marginTop="15dp">
         <EditText
-            android:hint="Kilometer"
-            android:id="@+id/kmEditText"
-            android:inputType="numberDecimal"
+            android:hint="Leistungen"
+            android:id="@+id/performanceText"
             android:layout_height="45.0dp"
             android:layout_weight="1"
             android:layout_width="fill_parent" />
         <Button
-            android:text="Kilometer speichern"
-            android:id="@+id/button3"
+            android:text="Leistungen speichern"
+            android:id="@+id/performanceSaveBtn"
             android:layout_marginLeft="10dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -46,33 +45,4 @@
             android:textStyle="normal"
             android:padding="10dp" />
     </LinearLayout>
-    <Button
-        android:text="Ankunft speichern"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button1"
-        android:layout_marginTop="25dp"
-        android:background="#ff65ae59"
-        android:typeface="normal"
-        android:textStyle="normal" />
-    <Button
-        android:text="Abfahrt speichern"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button2"
-        android:background="#ff65ae59"
-        android:layout_marginTop="5dp"
-        android:typeface="normal"
-        android:textStyle="normal"
-        android:fadingEdge="none" />
-    <Button
-        android:text="Leistung nicht erbracht"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button4"
-        android:background="#BF211E"
-        android:layout_marginTop="5dp"
-        android:typeface="normal"
-        android:textStyle="normal"
-        android:fadingEdge="none" />
 </LinearLayout>

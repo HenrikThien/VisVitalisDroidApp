@@ -37,7 +37,7 @@ namespace visvitalis.Networking
                     new KeyValuePair<string, string>("token", token)
                 });
 
-                var httpResponse = await client.PostAsync("/api/register", content);
+                var httpResponse = await client.PostAsync("/API/register", content);
                 httpResponse.EnsureSuccessStatusCode();
 
                 var response = await httpResponse.Content.ReadAsStringAsync();
@@ -66,7 +66,7 @@ namespace visvitalis.Networking
                     new KeyValuePair<string, string>("password", password)
                 });
 
-                var httpResponse = await client.PostAsync("/api/authuser", content);
+                var httpResponse = await client.PostAsync("/API/authuser", content);
                 httpResponse.EnsureSuccessStatusCode();
 
                 var response = await httpResponse.Content.ReadAsStringAsync();
@@ -101,7 +101,7 @@ namespace visvitalis.Networking
                         new KeyValuePair<string, string>("client_secret", loginresponse.ClientSecret)
                      });
 
-                    var httpResponse = await client.PostAsync("/api/token", content);
+                    var httpResponse = await client.PostAsync("/API/token", content);
                     httpResponse.EnsureSuccessStatusCode();
 
                     var response = await httpResponse.Content.ReadAsStringAsync();
@@ -139,7 +139,7 @@ namespace visvitalis.Networking
                         new KeyValuePair<string, string>("masknr", masknr)
                     });
 
-                    var httpResponse = await client.PostAsync("/api/downloadmask", content);
+                    var httpResponse = await client.PostAsync("/API/downloadmask", content);
                     
                     if (httpResponse.IsSuccessStatusCode)
                     {
@@ -196,7 +196,7 @@ namespace visvitalis.Networking
                         new KeyValuePair<string, string>("client_secret", session.LoginResponse.ClientSecret)
                     });
 
-                    var httpResponse = await client.PostAsync("/api/token", content);
+                    var httpResponse = await client.PostAsync("/API/token", content);
 
                     if (httpResponse.IsSuccessStatusCode)
                     {
@@ -228,7 +228,7 @@ namespace visvitalis.Networking
                     var data = new Dictionary<string, string>();
                     data["data"] = jsonContent;
 
-                    var httpResponse = await client.PostAsync("/api/uploadfinishedmask", new FormUrlEncodedContent(data));
+                    var httpResponse = await client.PostAsync("/API/uploadfinishedmask", new FormUrlEncodedContent(data));
 
                     if (httpResponse.IsSuccessStatusCode)
                     {
@@ -277,21 +277,30 @@ namespace visvitalis.Networking
         public async Task<bool> IsServerAvailableAsync()
         {
             var available = false;
-
-            try
+            
+            await Task.Factory.StartNew(() =>
             {
-                var addr = new InetSocketAddress(AppConstants.ServerIP, 80);
-                var sock = new Socket();
+                try
+                {
+                    URL url = new URL("http://" + AppConstants.ServerIP);
 
-                await sock.ConnectAsync(addr, 4000);
-                available = true;
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex);
-                available = false;
-            }
+                    HttpURLConnection urlc = (HttpURLConnection)url.OpenConnection();
+                    urlc.SetRequestProperty("User-Agent", "Android Application: 1.00");
+                    urlc.SetRequestProperty("Connection", "close");
+                    urlc.ConnectTimeout = 4000;
+                    urlc.Connect();
 
+                    if (urlc.ResponseCode == HttpStatus.Ok)
+                    {
+                        available = true;
+                    }
+                }
+                catch
+                {
+                    available = false;
+                }
+            });
+            
             return available;
         }
 

@@ -27,8 +27,10 @@ namespace visvitalis.JSON
         public string Departure { get; set; }
         [JsonProperty("leistung")]
         public List<string> Performances { get; set; }
+        [JsonProperty("ma")]
+        public string WorkerToken { get; set; }
 
-        private string LeistungAsString()
+        public string LeistungAsString()
         {
             var builder = new StringBuilder();
             foreach (var lst in Performances)

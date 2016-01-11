@@ -161,13 +161,13 @@ namespace visvitalis
 
         async Task<bool> IsPlayServiceAvailable()
         {
-            int resultCode = await Task.Factory.StartNew(() => GooglePlayServicesUtil.IsGooglePlayServicesAvailable(this));
+            //int resultCode = await Task.Factory.StartNew(() => GooglePlayServicesUtil.IsGooglePlayServicesAvailable(this));
 
-            if (resultCode != ConnectionResult.Success)
-            {
-                CreateAlert("Fehler", "Dieses Gerät wird nicht unterstützt. Der Google Playstore fehlt.");
-                return false;
-            }
+            //if (resultCode != ConnectionResult.Success)
+            //{
+            //    CreateAlert("Fehler", "Dieses Gerät wird nicht unterstützt. Der Google Playstore fehlt.");
+            //    return false;
+            //}
 
             return true;
         }

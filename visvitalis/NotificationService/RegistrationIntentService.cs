@@ -65,7 +65,7 @@ namespace visvitalis.NotificationService
                     {
                         var response = await client.RegisterDeviceAsync(groupname, token);
 
-                        if (response != null)
+                        if (response != null && response.Valid)
                         {
                             var editor = preferences.Edit();
                             editor.PutString(AppConstants.DeviceToken, token);

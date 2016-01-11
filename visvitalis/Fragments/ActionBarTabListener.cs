@@ -19,9 +19,11 @@ namespace visvitalis.Fragments
         private FragmentTransaction _fragmentTransaction;
         private ProgressDialog _progressDialog;
         private readonly Context _appContext;
+        private readonly string _workerToken;
 
-        public TabListener(Context appContext, string text, string date, FragmentManager fgManager)
+        public TabListener(Context appContext, string workerToken, string text, string date, FragmentManager fgManager)
         {
+            _workerToken = workerToken;
             _appContext = appContext;
             _text = text;
             _date = date;
@@ -38,10 +40,10 @@ namespace visvitalis.Fragments
             {
                 await ReadFileContent();
 
-                _view = TabFragment.CreateNewInstance("morgens", _date, _content);
+                _view = TabFragment.CreateNewInstance("morgens", _date, _content, _workerToken);
 
                 if (_text.ToLower() == "abends")
-                    _view = TabFragment.CreateNewInstance("abends", _date, _content);
+                    _view = TabFragment.CreateNewInstance("abends", _date, _content, _workerToken);
             }
 
             _progressDialog.Dismiss();

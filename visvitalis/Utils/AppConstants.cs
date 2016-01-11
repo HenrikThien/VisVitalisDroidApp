@@ -3,7 +3,7 @@ namespace visvitalis.Utils
     public static class AppConstants
     {
         public const string GoogleAPIServerId = "457315125602";
-        public const string ServerIP = "192.168.178.34";
+        public const string ServerIP = "app.visvitalis.info";
         public const string DeviceToken = "DEVICE_TOKEN";
         public const string GroupName = "GROUP_NAME";
         public const string Session = "SESSION";

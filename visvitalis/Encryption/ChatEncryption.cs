@@ -56,7 +56,7 @@ namespace visvitalis.Encryption
                         new KeyValuePair<string, string>("iv", encryptedIv)
                     });
 
-                    var httpResponse = await client.PostAsync("/chat/message", content);
+                    var httpResponse = await client.PostAsync("/Chat/message", content);
                     httpResponse.EnsureSuccessStatusCode();
 
                     var response = await httpResponse.Content.ReadAsStringAsync();
@@ -89,7 +89,7 @@ namespace visvitalis.Encryption
                     new KeyValuePair<string, string>("iv", encryptedIv)
                 });
 
-                var httpResponse = await client.PostAsync("/chat/keyiv", content);
+                var httpResponse = await client.PostAsync("/Chat/keyiv", content);
                 httpResponse.EnsureSuccessStatusCode();
 
                 var response = await httpResponse.Content.ReadAsStringAsync();
@@ -108,7 +108,7 @@ namespace visvitalis.Encryption
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new System.Uri("http://" + AppConstants.ServerIP);
-                var httpResponse = await client.GetAsync("/chat/publickey");
+                var httpResponse = await client.GetAsync("/Chat/publickey");
                 httpResponse.EnsureSuccessStatusCode();
 
                 var response = await httpResponse.Content.ReadAsStringAsync();

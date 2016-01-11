@@ -16,6 +16,7 @@ using Android.Text;
 using Android.Text.Style;
 using visvitalis.Networking;
 using Android.Preferences;
+using System.Collections.Generic;
 
 namespace visvitalis
 {
@@ -29,6 +30,7 @@ namespace visvitalis
         protected override void OnCreate(Bundle bundle)
         {
             base.OnCreate(bundle);
+            OverridePendingTransition(Resource.Animation.from_left, Resource.Animation.hold);
             SetContentView(Resource.Layout.PatientListView);
 
             var jsonContent = Intent.GetStringExtra(AppConstants.JsonMask);
@@ -41,8 +43,13 @@ namespace visvitalis
             }
 
             DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
-
             Init(date, jsonContent);
+        }
+
+        protected override void OnPause()
+        {
+            OverridePendingTransition(Resource.Animation.hold, Resource.Animation.to_left);
+            base.OnPause();
         }
 
         void Init(string date, string content)
@@ -65,7 +72,7 @@ namespace visvitalis
         {
             var tab = ActionBar.NewTab();
             tab.SetText(text);
-            tab.SetTabListener(new TabListener(this, text, date, FragmentManager));
+            tab.SetTabListener(new TabListener(this, _fileWorkerToken, text, date, FragmentManager));
             ActionBar.AddTab(tab);
         }
 
@@ -93,6 +100,22 @@ namespace visvitalis
 
         public async void UploadDataAsync()
         {
+            _progressDialog = new ProgressDialog(this);
+            _progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
+            _progressDialog.SetCancelable(false);
+            _progressDialog.SetTitle("Hochladen...");
+            _progressDialog.SetMessage("Daten werden hochgeladen, bitte warten...");
+            _progressDialog.SetCanceledOnTouchOutside(false);
+            _progressDialog.Show();
+
+            if (_fileDateTime.Date != DateTime.Now.Date)
+            {
+                CreateAlert("Fehler", "Die Maske kann nur abgesendet werden wenn das Datum stimmt.");
+                _progressDialog.Dismiss();
+                _progressDialog = null;
+                return;
+            }
+
             var jsonContent = "";
 
             using (var fileManager = new FileManager(_fileDateTime.ToString("ddMMyy"), _fileDateTime))
@@ -103,26 +126,42 @@ namespace visvitalis
             if (string.IsNullOrEmpty(jsonContent))
             {
                 CreateAlert("Fehler", "Es konnte keine Maske zum Hochladen gefunden werden.");
+                _progressDialog.Dismiss();
+                _progressDialog = null;
                 return;
             }
 
             var maskObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(jsonContent));
 
             maskObj.PatientMask.PatientOperation.MaskDate = _fileDateTime.ToString("ddMMyy");
-            maskObj.PatientMask.PatientOperation.WorkerToken = _fileWorkerToken;
+            maskObj.PatientMask.PatientOperation.WorkerToken = "xxx";
+
+            var newTourList = new Dictionary<string, List<Patient>>();
+
+            foreach (var time in maskObj.PatientMask.PatientOperation.Tours)
+            {
+                newTourList.Add(time.Id, new List<Patient>());
+
+                foreach (var patient in time.Patients)
+                {
+                    if (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken.Equals(_fileWorkerToken))
+                    {
+                        newTourList[time.Id].Add(patient);
+                    }
+                }
+            }
+            try
+            {
+                maskObj.PatientMask.PatientOperation.Tours[0].Patients = newTourList["morgens"];
+            }
+            catch { }
+            try
+            {
+                maskObj.PatientMask.PatientOperation.Tours[1].Patients = newTourList["abends"];
+            }
+            catch { }
 
             var newJsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
-
-            if (await MaskAlreadySent(_fileDateTime.ToString("ddMMyy")))
-            {
-                CreateAlert("Fehler", "Diese Maske wurde bereits hochgeladen!");
-                return;
-            }
-
-            using (var fileManager = new FileManager(maskObj.PatientMask.PatientOperation.MaskDate, _fileDateTime))
-            {
-                await fileManager.SaveJsonContentAsync(newJsonContent);
-            }
 
             using (var client = new ServerConnector())
             {
@@ -136,21 +175,26 @@ namespace visvitalis
                         {
                             var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
                             Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
-                            await SaveMaskStateAsync(_fileDateTime.ToString("ddMMyy"));
                         }
                         catch
                         {
-                            //Log.Debug("debug", ex.ToString());
                         }
+
+                        _progressDialog.Dismiss();
+                        _progressDialog = null;
                     }
                     else
                     {
                         CreateAlert("Datenserver", "Der Server scheint derzeit nicht erreichbar zu sein. Versuchen Sie es später erneut.");
+                        _progressDialog.Dismiss();
+                        _progressDialog = null;
                     }
                 }
                 else
                 {
                     CreateAlert("Internetverbindung", "Es ist keine Internetverbindung verfügbar.");
+                    _progressDialog.Dismiss();
+                    _progressDialog = null;
                 }
             }
         }
@@ -172,34 +216,6 @@ namespace visvitalis
             alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
             alert.SetPositiveButton("Absenden", (sender, args) => { UploadDataAsync(); });
             alert.Show();
-        }
-
-        async Task<bool> MaskAlreadySent(string date)
-        {
-            var returnState = false;
-            await Task.Factory.StartNew(() =>
-            {
-                var manager = PreferenceManager.GetDefaultSharedPreferences(this);
-                var state = manager.GetBoolean("mask_" + date, false);
-                returnState = state;
-            });
-            return returnState;
-        }
-
-        async Task SaveMaskStateAsync(string date)
-        {
-            await Task.Factory.StartNew(() =>
-            {
-                var manager = PreferenceManager.GetDefaultSharedPreferences(this);
-                var state = manager.GetBoolean("mask_" + date, false);
-                
-                if (!state)
-                {
-                    var editor = manager.Edit();
-                    editor.PutBoolean("mask_" + date, true);
-                    editor.Commit();
-                }
-            });
         }
     }
 }

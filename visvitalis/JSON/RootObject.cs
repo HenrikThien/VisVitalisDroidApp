@@ -27,5 +27,28 @@ namespace visvitalis.JSON
         public string MaskNr { get; set; }
         [JsonProperty("groupname")]
         public string Groupname { get; set; }
+
+
+        public override string ToString()
+        {
+            return "Die Maske";
+        }
+
+        [JsonIgnore]
+        public string PatientsMorgensAsString
+        {
+            get
+            {
+                return string.Join(",", PatientMask.GetEinsaetzeByTime("morgens"));
+            }
+        }
+        [JsonIgnore]
+        public string PatientsAbendsAsString
+        {
+            get
+            {
+                return string.Join(",", PatientMask.GetEinsaetzeByTime("abends"));
+            }
+        }
     }
 }
