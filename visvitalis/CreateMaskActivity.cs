@@ -1,21 +1,21 @@
 using Android.App;
 using Android.OS;
-using Android.Util;
 using Android.Views;
 using Android.Widget;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using visvitalis.Fragments;
 using visvitalis.JSON;
 using visvitalis.Utils;
+using Android.Support.V7.App;
+using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace visvitalis
 {
-    [Activity(Label = "Bestehende Masken benutzen", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main")]
-    public class CreateMaskActivity : Activity
+    [Activity(Label = "Bestehende Masken benutzen", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme")]
+    public class CreateMaskActivity : AppCompatActivity
     {
         private ListView masksListView;
         private CreateMaskAdapter masksAdapter;
@@ -29,7 +29,9 @@ namespace visvitalis
             masksListView = FindViewById<ListView>(Resource.Id.masksListView);
             masksListView.ChoiceMode = ChoiceMode.Single;
 
-            ActionBar.SetDisplayHomeAsUpEnabled(true);
+            var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolbar);
+            SupportActionBar.SetDisplayHomeAsUpEnabled(true);
 
             FillListView();
         }

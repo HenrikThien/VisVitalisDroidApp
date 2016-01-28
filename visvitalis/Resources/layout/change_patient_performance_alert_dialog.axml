@@ -21,7 +21,7 @@
         android:layout_marginTop="5dp"
         android:layout_marginLeft="10dp" />
     <LinearLayout
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:minWidth="25px"
         android:minHeight="25px"
         android:layout_width="match_parent"
@@ -31,14 +31,14 @@
         <EditText
             android:hint="Leistungen"
             android:id="@+id/performanceText"
-            android:layout_height="45.0dp"
+            android:layout_height="70dp"
             android:layout_weight="1"
-            android:layout_width="fill_parent" />
+            android:layout_width="fill_parent"
+            android:lines="10" />
         <Button
             android:text="Leistungen speichern"
             android:id="@+id/performanceSaveBtn"
-            android:layout_marginLeft="10dp"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#ff65ae59"
             android:typeface="normal"

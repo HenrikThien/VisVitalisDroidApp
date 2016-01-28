@@ -2,7 +2,9 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
   <!--<item android:id="@+id/showChat"
         android:icon="@drawable/envelope54"
-        android:title="Chat" />
+        android:title="Chat" /> -->
   <item android:id="@+id/showSettings"
-        android:title="App Einstellungen" />-->
+        android:title="Einstellungen" />
+  <item android:id="@+id/logout"
+        android:title="Abmelden" />
 </menu>

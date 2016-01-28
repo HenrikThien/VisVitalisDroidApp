@@ -13,12 +13,26 @@ using visvitalis.Networking;
 using System.Threading.Tasks;
 using Android.Preferences;
 using Newtonsoft.Json;
+using Android.Util;
 
 namespace visvitalis.Utils
 {
     static class StaticHolder
     {
         public static Session SessionHolder { get; set; }
+
+        public static async Task DestorySession(Context context)
+        {
+            await Task.Factory.StartNew(() =>
+            {
+                var preferences = PreferenceManager.GetDefaultSharedPreferences(context);
+                var editor = preferences.Edit();
+
+                editor.PutString(AppConstants.Session, "undefined");
+                editor.PutString(AppConstants.GroupName, "undefined");
+                editor.Commit();
+            });
+        }
 
         public static async Task SaveSessionAsync(Context context)
         {

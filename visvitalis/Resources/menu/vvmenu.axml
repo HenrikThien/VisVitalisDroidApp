@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
   <item android:id="@+id/finish"
         android:title="Zum Server schicken" />
-  <!--<item android:id="@+id/reset"
-        android:title="Zurücksetzen" />-->
+  <item android:id="@+id/neuerEinsatz"
+        android:title="Neuen Einsatz erstellen" />
 </menu>

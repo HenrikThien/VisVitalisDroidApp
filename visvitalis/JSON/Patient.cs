@@ -29,6 +29,8 @@ namespace visvitalis.JSON
         public List<string> Performances { get; set; }
         [JsonProperty("ma")]
         public string WorkerToken { get; set; }
+        [JsonProperty("state")]
+        public string ServerState { get; set; }
 
         public string LeistungAsString()
         {
@@ -43,6 +45,11 @@ namespace visvitalis.JSON
         public override string ToString()
         {
             return Nr + " - " + PatientName + " | " + LeistungAsString();
+        }
+
+        public string PatientTitle
+        {
+            get { return Nr + " - " + PatientName; }
         }
 
         public string SecondLine()

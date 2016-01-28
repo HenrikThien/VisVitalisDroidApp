@@ -7,25 +7,33 @@ using Android.Views;
 using Android.Widget;
 using visvitalis.Utils;
 using System.Globalization;
-using visvitalis.Fragments;
-using Android.Support.V4.App;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using visvitalis.JSON;
 using Android.Text;
 using Android.Text.Style;
 using visvitalis.Networking;
-using Android.Preferences;
 using System.Collections.Generic;
+using Android.Support.V7.App;
+using Toolbar = Android.Support.V7.Widget.Toolbar;
+using Android.Support.V4.View;
+using visvitalis.Fragments;
+using com.refractored;
+using Android.Util;
 
 namespace visvitalis
 {
-    [Activity(Label = "Liste der Patienten", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main")]
-    public class PatientListActivity : FragmentActivity
+    [Activity(Label = "Liste der Patienten", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
+    public class PatientListActivity : AppCompatActivity
     {
         private ProgressDialog _progressDialog;
         private DateTime _fileDateTime;
         private string _fileWorkerToken;
+        private string _fileDate;
+
+        private PagerSlidingTabStrip mSlidingTabLayout;
+        private ViewPager mViewPager;
+        private CompatPagerAdapter mPagerAdapter;
 
         protected override void OnCreate(Bundle bundle)
         {
@@ -42,6 +50,7 @@ namespace visvitalis
                 FinishActivity(0);
             }
 
+            _fileDate = date;
             DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
             Init(date, jsonContent);
         }
@@ -54,28 +63,25 @@ namespace visvitalis
 
         void Init(string date, string content)
         {
-            ActionBar.SetDisplayHomeAsUpEnabled(true);
+            mPagerAdapter = new CompatPagerAdapter(this, _fileWorkerToken, "", date, SupportFragmentManager);
+            mViewPager = FindViewById<ViewPager>(Resource.Id.pager);
+            mSlidingTabLayout = FindViewById<PagerSlidingTabStrip>(Resource.Id.tabs);
 
-            ActionBar.NavigationMode = ActionBarNavigationMode.Tabs;
-            ActionBar.SetIcon(Resource.Drawable.ic_launcher);
+            mViewPager.Adapter = mPagerAdapter;
 
-            var st = new SpannableString("Einsätze - " + _fileDateTime.ToString("dd - MM - yyyy") + " - " + _fileWorkerToken);
-            st.SetSpan(new TypefaceSpan("fonts/Champ.ttf"), 0, st.Length(), SpanTypes.ExclusiveExclusive);
+            mSlidingTabLayout.SetViewPager(mViewPager);
 
-            ActionBar.TitleFormatted = st;
+            var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolbar);
 
-            AddTab("Morgens", date);
-            AddTab("Abends", date);
+            SupportActionBar.SetDisplayHomeAsUpEnabled(true);
+            SupportActionBar.SetHomeButtonEnabled(true);
+            SupportActionBar.SetIcon(null);
+
+            SupportActionBar.Title = "Einsätze - " + _fileWorkerToken;
+            SupportActionBar.Subtitle = "Datum: " + _fileDateTime.ToString("dd - MM - yyyy");
         }
-
-        void AddTab(string text, string date)
-        {
-            var tab = ActionBar.NewTab();
-            tab.SetText(text);
-            tab.SetTabListener(new TabListener(this, _fileWorkerToken, text, date, FragmentManager));
-            ActionBar.AddTab(tab);
-        }
-
+        
         public override bool OnCreateOptionsMenu(IMenu menu)
         {
             menu.Clear();
@@ -92,6 +98,9 @@ namespace visvitalis
                     return true;
                 case Resource.Id.finish:
                     AskToUpload();
+                    return true;
+                case Resource.Id.neuerEinsatz:
+                    AskToCreateNewEntry();
                     return true;
                 default:
                     return base.OnOptionsItemSelected(menu);
@@ -138,37 +147,66 @@ namespace visvitalis
 
             var newTourList = new Dictionary<string, List<Patient>>();
 
-            foreach (var time in maskObj.PatientMask.PatientOperation.Tours)
-            {
-                newTourList.Add(time.Id, new List<Patient>());
-
-                foreach (var patient in time.Patients)
-                {
-                    if (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken.Equals(_fileWorkerToken))
-                    {
-                        newTourList[time.Id].Add(patient);
-                    }
-                }
-            }
-            try
-            {
-                maskObj.PatientMask.PatientOperation.Tours[0].Patients = newTourList["morgens"];
-            }
-            catch { }
-            try
-            {
-                maskObj.PatientMask.PatientOperation.Tours[1].Patients = newTourList["abends"];
-            }
-            catch { }
-
-            var newJsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
-
             using (var client = new ServerConnector())
             {
                 if (await client.IsNetworkAvailable(this))
                 {
                     if (await client.IsServerAvailableAsync())
                     {
+                        foreach (var time in maskObj.PatientMask.PatientOperation.Tours)
+                        {
+                            newTourList.Add(time.Id, new List<Patient>());
+
+                            foreach (var patient in time.Patients)
+                            {
+                                if (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken.Equals(_fileWorkerToken))
+                                {
+                                    if (patient.ServerState != "send")
+                                    {
+                                        patient.ServerState = "send";
+                                        newTourList[time.Id].Add(patient);
+                                    }
+                                }
+                            }
+                        }
+
+
+                        int count = 0;
+                        foreach (var item in newTourList)
+                            foreach (var patient in item.Value)
+                                count++;
+
+                        if (count > 0)
+                        {
+                            var timeToSave = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
+
+                            using (var fileMngr = new FileManager(_fileDate, _fileDateTime))
+                            {
+                                await fileMngr.SaveJsonContentAsync(timeToSave);
+                            }
+                        }
+
+                        try
+                        {
+                            maskObj.PatientMask.PatientOperation.Tours[0].Patients = newTourList["morgens"];
+                        }
+                        catch { }
+                        try
+                        {
+                            maskObj.PatientMask.PatientOperation.Tours[1].Patients = newTourList["abends"];
+                        }
+                        catch { }
+
+                        if (count == 0)
+                        {
+                            Toast.MakeText(this, "Es wurden keine Daten hochgeladen.", ToastLength.Short).Show();
+                            _progressDialog.Dismiss();
+                            _progressDialog = null;
+                            return;
+                        }
+
+                        var newJsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
+
                         var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newJsonContent);
 
                         try
@@ -201,7 +239,7 @@ namespace visvitalis
 
         void CreateAlert(string title, string message)
         {
-            var alert = new AlertDialog.Builder(this);
+            var alert = new Android.App.AlertDialog.Builder(this);
             alert.SetTitle(title);
             alert.SetMessage(message);
             alert.SetPositiveButton("Ok", (sender, args) => { alert.Dispose(); });
@@ -210,12 +248,29 @@ namespace visvitalis
 
         void AskToUpload()
         {
-            var alert = new AlertDialog.Builder(this);
+            var alert = new Android.App.AlertDialog.Builder(this);
             alert.SetTitle("Daten zum Server senden?");
             alert.SetMessage("Sind Sie sicher, dass die Daten zum Server geschickt werden sollen?\nWurden alle Daten ausgefüllt?");
             alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
             alert.SetPositiveButton("Absenden", (sender, args) => { UploadDataAsync(); });
             alert.Show();
+        }
+
+        void AskToCreateNewEntry()
+        {
+            var alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetTitle("Neuen Einsatz erstellen?");
+            alert.SetMessage("Möchten Sie einen neuen Einsatz erstellen?\nDieser wird nur für den heutigen Tag erstellt.");
+            alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
+            alert.SetPositiveButton("Weiter", (sender, args) => { CreateNewEntry(); });
+            alert.Show();
+        }
+
+        void CreateNewEntry()
+        {
+            var intent = new Intent();
+            intent.SetClass(this, typeof(CreateNewEntryActivity));
+            StartActivity(intent);
         }
     }
 }

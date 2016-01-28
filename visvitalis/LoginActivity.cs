@@ -1,30 +1,24 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
-using Android.Views;
 using Android.Widget;
 using Android.Graphics;
 using Android.Text;
 using Android.Text.Style;
 using System.Threading.Tasks;
-using System.Threading;
 using visvitalis.Networking;
-using Android.Gms.Common;
 using visvitalis.NotificationService;
 using Android.Preferences;
 using visvitalis.Utils;
-using Android.Util;
+using Android.Support.V7.App;
+using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace visvitalis
 {
-	[Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main", NoHistory = true)]
-    public class LoginActivity : Activity
+    [Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", NoHistory = true)]
+    public class LoginActivity : AppCompatActivity
     {
         private ProgressDialog _progressDialog;
 
@@ -33,9 +27,12 @@ namespace visvitalis
             base.OnCreate(bundle);
 			SetContentView (Resource.Layout.LoginScreen);
 
-			ActionBar.SetDisplayShowHomeEnabled (true);
+            var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolbar);
 
-			ActionBar.SetIcon (Resources.GetDrawable (Resource.Drawable.ic_launcher));
+            SupportActionBar.SetIcon(null);
+            SupportActionBar.SetDisplayShowHomeEnabled (true);
+            SupportActionBar.SetIcon (Resources.GetDrawable (Resource.Drawable.ic_launcher));
 
 			var typeface = Typeface.CreateFromAsset (this.Assets, "fonts/Generica.otf");
 			var loginTitle = FindViewById<TextView> (Resource.Id.textView1);
@@ -46,7 +43,7 @@ namespace visvitalis
 			var st = new SpannableString("  " + "Vis Vitalis");
 			st.SetSpan (new TypefaceSpan ("fonts/Generica.otf"), 0, st.Length (), SpanTypes.ExclusiveExclusive);
 
-			ActionBar.TitleFormatted = st;
+            SupportActionBar.TitleFormatted = st;
 
             var loginBtn = FindViewById<Button>(Resource.Id.button1);
             CheckPlayService(loginBtn);
@@ -152,7 +149,7 @@ namespace visvitalis
 
         void CreateAlert(string title, string message)
         {
-            var alert = new AlertDialog.Builder(this);
+            var alert = new Android.App.AlertDialog.Builder(this);
             alert.SetTitle(title);
             alert.SetMessage(message);
             alert.SetPositiveButton("Ok", (sender, args) => { alert.Dispose(); });

@@ -1,22 +1,20 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using System.Globalization;
 using visvitalis.Utils;
-using Android.Util;
+using Android.Support.V7.App;
+using Toolbar = Android.Support.V7.Widget.Toolbar;
+using System.Threading.Tasks;
 
 namespace visvitalis
 {
-    [Activity(Label = "Mitarbeiter bestätigen", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main")]
-    public class MainActivity : Activity
+    [Activity(Label = "Mitarbeiter bestätigen", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
+    public class MainActivity : AppCompatActivity
     {
         private ProgressDialog _progressDialog;
 
@@ -25,11 +23,16 @@ namespace visvitalis
             base.OnCreate(bundle);
             SetContentView(Resource.Layout.MainLayout);
 
+            var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolbar);
+
             var loadBtn = FindViewById<Button>(Resource.Id.button1);
             loadBtn.Click += LoadBtn_Click;
 
             var dateBox = FindViewById<EditText>(Resource.Id.editText2);
             dateBox.LongClick += DateBox_LongClick;
+
+            SupportActionBar.SetIcon(null);
         }
 
         private void DateBox_LongClick(object sender, View.LongClickEventArgs e)
@@ -86,7 +89,7 @@ namespace visvitalis
 
         void CreateAlert(string title, string message)
         {
-            var alert = new AlertDialog.Builder(this);
+            var alert = new Android.App.AlertDialog.Builder(this);
             alert.SetTitle(title);
             alert.SetMessage(message);
             alert.SetPositiveButton("Ok", (sender, args) => { alert.Dispose(); });
@@ -118,16 +121,52 @@ namespace visvitalis
                 case Android.Resource.Id.Home:
                     Finish();
                     return true;
-                //case Resource.Id.showChat:
-                //    {
-                //        var intent = new Intent();
-                //        intent.SetClass(this, typeof(ChatActivity));
-                //        StartActivity(intent);
-                //        return true;
-                //    }
+                case Resource.Id.showSettings:
+                    {
+                        var intent = new Intent();
+                        intent.SetClass(this, typeof(SettingsActivity));
+                        StartActivity(intent);
+                        return true;
+                    }
+                case Resource.Id.logout:
+                    {
+                        AskToLogout();
+                        return true;
+                    }
                 default:
                     return base.OnOptionsItemSelected(menu);
             }
+        }
+
+        void AskToLogout()
+        {
+            var alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetTitle("Von der App abmelden?");
+            alert.SetMessage("Sind Sie sicher das Sie sich nun abmelden möchten?\nZum wieder Anmelden wird eine Internetverbindung benötigt.");
+            alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
+            alert.SetPositiveButton("Abmelden", (sender, args) => { InitLogout(); });
+            alert.Show();
+        }
+
+        private async void InitLogout()
+        {
+            CreateLoadingDialog();
+
+            var activity = await Logout();
+            _progressDialog.Dismiss();
+
+            StartActivity(activity);
+            Finish();
+        }
+        private async Task<Intent> Logout()
+        {
+            Intent activity = new Intent(this, typeof(SplashScreen));
+            activity.SetFlags(ActivityFlags.NoHistory | ActivityFlags.ClearTask);
+
+            StaticHolder.SessionHolder = null;
+            await StaticHolder.DestorySession(this);
+
+            return activity;
         }
     }
 }

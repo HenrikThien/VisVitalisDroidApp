@@ -38,8 +38,13 @@
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Mono.Android.Export" />
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\portable-net40+sl5+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Refractored.PagerSlidingTabStrip, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Refractored.PagerSlidingTabStrip.1.0.9\lib\MonoAndroid10\Refractored.PagerSlidingTabStrip.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -49,6 +54,18 @@
     <Reference Include="Mono.Android" />
     <Reference Include="Xamarin.Android.Support.v4, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Xamarin.Android.Support.v4.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.AppCompat, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.AppCompat.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.AppCompat.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.CardView, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.CardView.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.CardView.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Xamarin.Android.Support.v7.RecyclerView, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Xamarin.Android.Support.v7.RecyclerView.22.2.0.0\lib\MonoAndroid403\Xamarin.Android.Support.v7.RecyclerView.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Xamarin.GooglePlayServices.Base, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -63,17 +80,15 @@
   <ItemGroup>
     <Compile Include="ChatActivity.cs" />
     <Compile Include="CreateMaskActivity.cs" />
+    <Compile Include="CreateNewEntryActivity.cs" />
     <Compile Include="Encryption\AesToPhp.cs" />
     <Compile Include="Encryption\ChatEncryption.cs" />
     <Compile Include="Encryption\EncryptionUtility.cs" />
     <Compile Include="Encryption\RsaToPhp.cs" />
-    <Compile Include="Fragments\ActionBarTabListener.cs" />
     <Compile Include="Fragments\ChatAdapter.cs" />
     <Compile Include="Fragments\ChatMessage.cs" />
+    <Compile Include="Fragments\CompatPagerAdapter.cs" />
     <Compile Include="Fragments\CreateMaskAdapter.cs" />
-    <Compile Include="Fragments\CustomAdapter.cs" />
-    <Compile Include="Fragments\Message.cs" />
-    <Compile Include="Fragments\TabFragment.cs" />
     <Compile Include="JSON\Patient.cs" />
     <Compile Include="JSON\PatientMask.cs" />
     <Compile Include="JSON\PatientOperation.cs" />
@@ -90,9 +105,13 @@
     <Compile Include="Networking\Responses\LoginResponse.cs" />
     <Compile Include="NotificationService\RegistrationIntentService.cs" />
     <Compile Include="PatientListActivity.cs" />
+    <Compile Include="Recycler\Patient\RecyclerPatientItem.cs" />
+    <Compile Include="Recycler\Patient\RecyclerPatientItemViewHolder.cs" />
+    <Compile Include="Recycler\Patient\RecyclerPatientViewAdapter.cs" />
+    <Compile Include="Recycler\Patient\RecyclerPatientViewFragment.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SettingActivity.cs" />
+    <Compile Include="SettingsActivity.cs" />
     <Compile Include="SplashScreen.cs" />
     <Compile Include="Utils\AppConstants.cs" />
     <Compile Include="Networking\ServerConnector.cs" />
@@ -127,9 +146,6 @@
     <AndroidResource Include="Resources\menu\vvmenu.axml">
       <SubType>Designer</SubType>
     </AndroidResource>
-    <AndroidResource Include="Resources\layout\Tab.axml">
-      <SubType>AndroidResource</SubType>
-    </AndroidResource>
     <AndroidResource Include="Resources\layout\save_time_alert_dialog.axml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -160,6 +176,18 @@
     <AndroidResource Include="Resources\layout\CreateMaskLayout.axml">
       <SubType>AndroidResource</SubType>
     </AndroidResource>
+    <AndroidResource Include="Resources\layout\Toolbar.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\fragment_card.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\TabRecycler.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
+    <AndroidResource Include="Resources\layout\CreateNewEntryLayout.axml">
+      <SubType>AndroidResource</SubType>
+    </AndroidResource>
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\values\Strings.xml" />
@@ -183,7 +211,23 @@
     <AndroidResource Include="Resources\values\tt_attrs.xml" />
   </ItemGroup>
   <ItemGroup>
+    <XamarinComponentReference Include="PagerSlidingTabStrip">
+      <Visible>False</Visible>
+      <Version>1.0.9</Version>
+    </XamarinComponentReference>
     <XamarinComponentReference Include="xamandroidsupportv4-18">
+      <Visible>False</Visible>
+      <Version>22.2.0.0</Version>
+    </XamarinComponentReference>
+    <XamarinComponentReference Include="xamandroidsupportv7appcompat">
+      <Visible>False</Visible>
+      <Version>22.2.0.0</Version>
+    </XamarinComponentReference>
+    <XamarinComponentReference Include="xamandroidsupportv7cardview">
+      <Visible>False</Visible>
+      <Version>22.2.0.0</Version>
+    </XamarinComponentReference>
+    <XamarinComponentReference Include="xamandroidsupportv7recyclerview">
       <Visible>False</Visible>
       <Version>22.2.0.0</Version>
     </XamarinComponentReference>
@@ -1783,5 +1827,36 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\anim\hold.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\xml\settings.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\values\arrays.xml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\values-v19\Style.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-hdpi\SplashScreen.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-ldpi\SplashScreen.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-mdpi\SplashScreen.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-xhdpi\SplashScreen.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-xxhdpi\SplashScreen.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable-xxxhdpi\SplashScreen.xml" />
   </ItemGroup>
 </Project>

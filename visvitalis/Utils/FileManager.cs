@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Globalization;
+using Android.Util;
 
 namespace visvitalis.Utils
 {
@@ -49,6 +50,35 @@ namespace visvitalis.Utils
 
             return fileContent;
         }
+        public string LoadFile()
+        {
+            var weekId = GetIso8601WeekOfYear(_dateTime);
+            var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
+
+            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), newWeekId);
+            var filePath = Path.Combine(directoryPath, _date + ".json");
+
+            var fileContent = "";
+
+            if (!File.Exists(filePath))
+            {
+                fileContent = "undefined";
+            }
+
+            if (fileContent != "undefined")
+            {
+                using (var reader = new StreamReader(filePath))
+                {
+                    fileContent = reader.ReadToEnd();
+                }
+            }
+            else
+            {
+                fileContent = "[]";
+            }
+
+            return fileContent;
+        }
 
         public int GetIso8601WeekOfYear(DateTime time)
         {
@@ -74,18 +104,16 @@ namespace visvitalis.Utils
             var filePath = Path.Combine(directoryPath, _date + ".json");
             var success = false;
 
-            await Task.Factory.StartNew(() =>
-            {
-                if (!File.Exists(filePath))
-                {
-                    success = false;
-                }
-            });
+            Log.Debug("debug", "Path to file: => " + filePath);
 
-            using (var writer = new StreamWriter(filePath))
+            if (await Task.Factory.StartNew(() => File.Exists(filePath)))
             {
-                await writer.WriteAsync(content);
-                success = true;
+                using (var writer = new StreamWriter(filePath))
+                {
+                    await writer.WriteAsync(content);
+                    success = true;
+                    await writer.FlushAsync();
+                }
             }
 
             return success;

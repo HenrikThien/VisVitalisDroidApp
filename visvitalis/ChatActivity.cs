@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 using visvitalis.Fragments;
 using System;
 using visvitalis.Encryption;
+using Android.Support.V7.App;
+using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace visvitalis
 {
-    [Activity(Label = "Nachrichten mit dem Büro", Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main")]
-    public class ChatActivity : Activity
+    [Activity(Label = "Nachrichten mit dem Büro", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme")]
+    public class ChatActivity : AppCompatActivity
     {
         private EditText messageET;
         private ListView messagesContainer;
@@ -37,8 +39,11 @@ namespace visvitalis
 
         async void Init()
         {
-            ActionBar.SetHomeButtonEnabled(true);
-            ActionBar.SetDisplayHomeAsUpEnabled(true);
+            var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
+            SetSupportActionBar(toolbar);
+
+            SupportActionBar.SetHomeButtonEnabled(true);
+            SupportActionBar.SetDisplayHomeAsUpEnabled(true);
 
             await LoadSavedMessagesAsync();
         }

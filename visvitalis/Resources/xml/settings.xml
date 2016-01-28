@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <PreferenceCategory android:title="Patientenlisten Einstellungen">
+    <ListPreference
+        android:key="prefSyncFrequency"
+        android:entries="@array/syncFrequency"
+        android:summary="Die Elemente die nebeneinander angezeigt werden.\nBitte hier klicken um Option zu öffnen."
+        android:entryValues="@array/syncFrequencyValues"
+        android:title="Anzahl der Elemente"
+        android:defaultValue="1" />
+    <SwitchPreference
+        android:key="prefToogle"
+        android:defaultValue="1"
+        android:title="Automatisches Einloggen"
+        android:summary="Die App hat die Möglichkeit sich von alleine neu beim Sever anzumelden.\nMan muss also nicht die Daten neu eingeben wenn die Session abläuft."/>
+  </PreferenceCategory>
+
+  <PreferenceCategory android:title="App Informationen">
+    <Preference
+        android:key="deviceToken"
+        android:editable="false"
+        android:title="Geräte ID"
+        android:summary="%placeholder%" />
+    <Preference
+        android:key="deviceAccount"
+        android:editable="false"
+        android:title="Aktueller Account"
+        android:summary="%placeholder%" />
+    <Preference
+        android:key="autorName"
+        android:editable="false"
+        android:title="Autor"
+        android:summary="Henrik Thien 2015-2016\nhenrikthienth@gmail.com" />
+    <Preference
+        android:key="companyName"
+        android:editable="false"
+        android:title="Firma"
+        android:summary="VIS VITALIS - http://visvitalis.info" />
+  </PreferenceCategory>
+</PreferenceScreen>

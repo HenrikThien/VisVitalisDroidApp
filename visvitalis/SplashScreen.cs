@@ -1,23 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using System.Threading.Tasks;
-using System.Threading;
-using Android.Graphics;
 using visvitalis.Utils;
 using visvitalis.NotificationService;
+using Android.Util;
 
 namespace visvitalis
 {
-	[Activity(MainLauncher = true, Icon = "@drawable/ic_launcher", Theme = "@style/Theme.Main", NoHistory = true)]
+    [Activity(MainLauncher = true, Icon = "@drawable/ic_launcher", Theme = "@style/SplashScreenTheme", NoHistory = true)]
     public class SplashScreen : Activity
     {
         protected override void OnCreate(Bundle bundle)
@@ -43,24 +34,18 @@ namespace visvitalis
                 var intent = new Intent(this, typeof(RegistrationIntentService));
                 StartService(intent);
 
-                OpenMainActivity();
+                OpenActivity(typeof(MainActivity));
             }
             else
             {
-                OpenLoginActivity();
+                OpenActivity(typeof(LoginActivity));
             }
         }
 
-        void OpenLoginActivity()
+        void OpenActivity(System.Type type)
         {
             var intent = new Intent();
-            intent.SetClass(this, typeof(LoginActivity));
-            StartActivity(intent);
-        }
-		void OpenMainActivity()
-        {
-            var intent = new Intent();
-            intent.SetClass(this, typeof(MainActivity));
+            intent.SetClass(this, type);
             StartActivity(intent);
         }
     }
