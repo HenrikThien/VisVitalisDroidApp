@@ -11,5 +11,6 @@ namespace visvitalis.Utils
         public const string DataFolder = "visvitalisdata";
         public const string FileDate = "FILE_DATE";
         public const string FileWorkerToken = "FILE_WORKER_TOKEN";
+        public const string LoadOldFile = "OLD_FILE_LOAD";
     }
 }

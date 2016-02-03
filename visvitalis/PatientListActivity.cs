@@ -20,16 +20,18 @@ using Android.Support.V4.View;
 using visvitalis.Fragments;
 using com.refractored;
 using Android.Util;
+using Android.Support.V4.App;
 
 namespace visvitalis
 {
     [Activity(Label = "Liste der Patienten", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
-    public class PatientListActivity : AppCompatActivity
+    public class PatientListActivity : AppCompatActivity, ViewPager.IOnPageChangeListener
     {
         private ProgressDialog _progressDialog;
         private DateTime _fileDateTime;
         private string _fileWorkerToken;
         private string _fileDate;
+        private bool _oldFile;
 
         private PagerSlidingTabStrip mSlidingTabLayout;
         private ViewPager mViewPager;
@@ -44,6 +46,7 @@ namespace visvitalis
             var jsonContent = Intent.GetStringExtra(AppConstants.JsonMask);
             var date = Intent.GetStringExtra(AppConstants.FileDate);
             _fileWorkerToken = Intent.GetStringExtra(AppConstants.FileWorkerToken);
+            _oldFile = Intent.GetBooleanExtra(AppConstants.LoadOldFile, false);
 
             if (string.IsNullOrEmpty(jsonContent))
             {
@@ -63,11 +66,13 @@ namespace visvitalis
 
         void Init(string date, string content)
         {
-            mPagerAdapter = new CompatPagerAdapter(this, _fileWorkerToken, "", date, SupportFragmentManager);
+            mPagerAdapter = new CompatPagerAdapter(this, _oldFile, _fileWorkerToken, "", date, SupportFragmentManager);
             mViewPager = FindViewById<ViewPager>(Resource.Id.pager);
             mSlidingTabLayout = FindViewById<PagerSlidingTabStrip>(Resource.Id.tabs);
 
             mViewPager.Adapter = mPagerAdapter;
+            mViewPager.OffscreenPageLimit = 1;
+            mViewPager.AddOnPageChangeListener(this);
 
             mSlidingTabLayout.SetViewPager(mViewPager);
 
@@ -107,134 +112,9 @@ namespace visvitalis
             }
         }
 
-        public async void UploadDataAsync()
+        public void UploadDataAsync()
         {
-            _progressDialog = new ProgressDialog(this);
-            _progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
-            _progressDialog.SetCancelable(false);
-            _progressDialog.SetTitle("Hochladen...");
-            _progressDialog.SetMessage("Daten werden hochgeladen, bitte warten...");
-            _progressDialog.SetCanceledOnTouchOutside(false);
-            _progressDialog.Show();
-
-            if (_fileDateTime.Date != DateTime.Now.Date)
-            {
-                CreateAlert("Fehler", "Die Maske kann nur abgesendet werden wenn das Datum stimmt.");
-                _progressDialog.Dismiss();
-                _progressDialog = null;
-                return;
-            }
-
-            var jsonContent = "";
-
-            using (var fileManager = new FileManager(_fileDateTime.ToString("ddMMyy"), _fileDateTime))
-            {
-                jsonContent = await fileManager.LoadFileAsync();
-            }
-
-            if (string.IsNullOrEmpty(jsonContent))
-            {
-                CreateAlert("Fehler", "Es konnte keine Maske zum Hochladen gefunden werden.");
-                _progressDialog.Dismiss();
-                _progressDialog = null;
-                return;
-            }
-
-            var maskObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(jsonContent));
-
-            maskObj.PatientMask.PatientOperation.MaskDate = _fileDateTime.ToString("ddMMyy");
-            maskObj.PatientMask.PatientOperation.WorkerToken = "xxx";
-
-            var newTourList = new Dictionary<string, List<Patient>>();
-
-            using (var client = new ServerConnector())
-            {
-                if (await client.IsNetworkAvailable(this))
-                {
-                    if (await client.IsServerAvailableAsync())
-                    {
-                        foreach (var time in maskObj.PatientMask.PatientOperation.Tours)
-                        {
-                            newTourList.Add(time.Id, new List<Patient>());
-
-                            foreach (var patient in time.Patients)
-                            {
-                                if (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken.Equals(_fileWorkerToken))
-                                {
-                                    if (patient.ServerState != "send")
-                                    {
-                                        patient.ServerState = "send";
-                                        newTourList[time.Id].Add(patient);
-                                    }
-                                }
-                            }
-                        }
-
-
-                        int count = 0;
-                        foreach (var item in newTourList)
-                            foreach (var patient in item.Value)
-                                count++;
-
-                        if (count > 0)
-                        {
-                            var timeToSave = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
-
-                            using (var fileMngr = new FileManager(_fileDate, _fileDateTime))
-                            {
-                                await fileMngr.SaveJsonContentAsync(timeToSave);
-                            }
-                        }
-
-                        try
-                        {
-                            maskObj.PatientMask.PatientOperation.Tours[0].Patients = newTourList["morgens"];
-                        }
-                        catch { }
-                        try
-                        {
-                            maskObj.PatientMask.PatientOperation.Tours[1].Patients = newTourList["abends"];
-                        }
-                        catch { }
-
-                        if (count == 0)
-                        {
-                            Toast.MakeText(this, "Es wurden keine Daten hochgeladen.", ToastLength.Short).Show();
-                            _progressDialog.Dismiss();
-                            _progressDialog = null;
-                            return;
-                        }
-
-                        var newJsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(maskObj));
-
-                        var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newJsonContent);
-
-                        try
-                        {
-                            var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
-                            Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
-                        }
-                        catch
-                        {
-                        }
-
-                        _progressDialog.Dismiss();
-                        _progressDialog = null;
-                    }
-                    else
-                    {
-                        CreateAlert("Datenserver", "Der Server scheint derzeit nicht erreichbar zu sein. Versuchen Sie es später erneut.");
-                        _progressDialog.Dismiss();
-                        _progressDialog = null;
-                    }
-                }
-                else
-                {
-                    CreateAlert("Internetverbindung", "Es ist keine Internetverbindung verfügbar.");
-                    _progressDialog.Dismiss();
-                    _progressDialog = null;
-                }
-            }
+            
         }
 
         void CreateAlert(string title, string message)
@@ -271,6 +151,24 @@ namespace visvitalis
             var intent = new Intent();
             intent.SetClass(this, typeof(CreateNewEntryActivity));
             StartActivity(intent);
+        }
+
+        public void OnPageScrollStateChanged(int state)
+        {
+        }
+
+        public void OnPageScrolled(int position, float positionOffset, int positionOffsetPixels)
+        {
+        }
+
+        public void OnPageSelected(int position)
+        {
+            var fragment = (mViewPager.Adapter as CompatPagerAdapter).GetFragment(position);
+
+            if (fragment != null)
+            {
+                fragment.OnResume();
+            }
         }
     }
 }

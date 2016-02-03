@@ -1,14 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using Newtonsoft.Json;
 
 namespace visvitalis.JSON
@@ -25,12 +16,16 @@ namespace visvitalis.JSON
         public string Arrival { get; set; }
         [JsonProperty("abf")]
         public string Departure { get; set; }
+        [JsonProperty("mission")]
+        public string Mission { get; set; }
         [JsonProperty("leistung")]
         public List<string> Performances { get; set; }
         [JsonProperty("ma")]
         public string WorkerToken { get; set; }
         [JsonProperty("state")]
         public string ServerState { get; set; }
+        [JsonProperty("order")]
+        public int Order { get; set; }
 
         public string LeistungAsString()
         {
@@ -47,6 +42,7 @@ namespace visvitalis.JSON
             return Nr + " - " + PatientName + " | " + LeistungAsString();
         }
 
+        [JsonIgnore]
         public string PatientTitle
         {
             get { return Nr + " - " + PatientName; }

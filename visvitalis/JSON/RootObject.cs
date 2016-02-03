@@ -19,15 +19,20 @@ namespace visvitalis.JSON
         public bool Valid { get; set; }
         [JsonProperty("message")]
         public string Message { get; set; }
+        [JsonProperty("is_new")]
+        public bool IsNew { get; set; }
         [JsonProperty("data")]
-        public PatientMask PatientMask { get; set; }
+        public List<PatientMask> PatientMask { get; set; }
         [JsonProperty("weeknr")]
         public string WeekNr { get; set; }
         [JsonProperty("masknr")]
         public string MaskNr { get; set; }
         [JsonProperty("groupname")]
         public string Groupname { get; set; }
-
+        [JsonProperty("datum_start")]
+        public string DatumStart { get; set; }
+        [JsonProperty("datum_end")]
+        public string DatumEnd { get; set; }
 
         public override string ToString()
         {
@@ -39,7 +44,7 @@ namespace visvitalis.JSON
         {
             get
             {
-                return string.Join(",", PatientMask.GetEinsaetzeByTime("morgens"));
+                return string.Join(",", PatientMask[0].GetEinsaetzeByTime("morgens"));
             }
         }
         [JsonIgnore]
@@ -47,7 +52,7 @@ namespace visvitalis.JSON
         {
             get
             {
-                return string.Join(",", PatientMask.GetEinsaetzeByTime("abends"));
+                return string.Join(",", PatientMask[0].GetEinsaetzeByTime("abends"));
             }
         }
     }

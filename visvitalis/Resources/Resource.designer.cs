@@ -2342,8 +2342,8 @@ namespace visvitalis
 			// aapt resource value: 0x7f0a003c
 			public const int expanded_menu = 2131361852;
 			
-			// aapt resource value: 0x7f0a0088
-			public const int finish = 2131361928;
+			// aapt resource value: 0x7f0a0086
+			public const int finish = 2131361926;
 			
 			// aapt resource value: 0x7f0a0005
 			public const int home = 2131361797;
@@ -2402,8 +2402,8 @@ namespace visvitalis
 			// aapt resource value: 0x7f0a002f
 			public const int list_item = 2131361839;
 			
-			// aapt resource value: 0x7f0a0087
-			public const int logout = 2131361927;
+			// aapt resource value: 0x7f0a0088
+			public const int logout = 2131361928;
 			
 			// aapt resource value: 0x7f0a0061
 			public const int masksListView = 2131361889;
@@ -2513,8 +2513,8 @@ namespace visvitalis
 			// aapt resource value: 0x7f0a0013
 			public const int showHome = 2131361811;
 			
-			// aapt resource value: 0x7f0a0086
-			public const int showSettings = 2131361926;
+			// aapt resource value: 0x7f0a0087
+			public const int showSettings = 2131361927;
 			
 			// aapt resource value: 0x7f0a0014
 			public const int showTitle = 2131361812;

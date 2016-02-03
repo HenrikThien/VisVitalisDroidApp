@@ -132,6 +132,7 @@ namespace visvitalis.Networking
                 using (var client = new HttpClient())
                 {
                     client.BaseAddress = new System.Uri("http://" + AppConstants.ServerIP);
+
                     var content = new FormUrlEncodedContent(new[]
                     {
                         new KeyValuePair<string, string>("access_token", session.AccessTokenResponse.AccessToken),
@@ -161,6 +162,62 @@ namespace visvitalis.Networking
                             editor.Commit();
 
                             return await DownloadMaskAsync(context, session, groupname, masknr);
+                        }
+                        else
+                        {
+                            return "[]";
+                        }
+                    }
+                    else
+                    {
+                        return "[]";
+                    }
+                }
+            }
+            catch
+            {
+                return "[]";
+            }
+        }
+        #endregion
+
+        #region Download new  mask
+        public async Task<string> DownloadNewMask(Context context, Session session, string groupname)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new System.Uri("http://" + AppConstants.ServerIP);
+
+                    var content = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("access_token", session.AccessTokenResponse.AccessToken),
+                        new KeyValuePair<string, string>("groupname", groupname)
+                    });
+
+                    var httpResponse = await client.PostAsync("/API/downloadfavomask", content);
+
+                    if (httpResponse.IsSuccessStatusCode)
+                    {
+                        var response = await httpResponse.Content.ReadAsStringAsync();
+                        return response;
+                    }
+                    else if (httpResponse.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        var newAccessTokenResponse = await RefreshToken(session);
+
+                        if (newAccessTokenResponse != null)
+                        {
+                            session.AccessTokenResponse = newAccessTokenResponse;
+                            var manager = PreferenceManager.GetDefaultSharedPreferences(context);
+                            var editor = manager.Edit();
+                            var sessionJson = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(session));
+
+                            editor.PutString(AppConstants.Session, sessionJson);
+                            editor.Commit();
+
+                            return await DownloadNewMask(context, session, groupname);
                         }
                         else
                         {

@@ -33,17 +33,13 @@ namespace visvitalis.NotificationService
             _year = data.GetString("year");
             _justAdd = data.GetString("just_add");
 
-            if (type == "download" && _justAdd != "true")
+            if (type == "download")
             {
-                StartDownloadAsync(_masknr, int.Parse(_weeknr), false);
-            }
-            else
-            {
-                StartDownloadAsync(_masknr, int.Parse(_weeknr), true);
+                StartDownloadAsync(_masknr, int.Parse(_weeknr));
             }
         }
 
-        async void StartDownloadAsync(string masknr, int weeknr, bool justAdd)
+        async void StartDownloadAsync(string masknr, int weeknr)
         {
             var preferences = PreferenceManager.GetDefaultSharedPreferences(this);
             var groupname = preferences.GetString(AppConstants.GroupName, "undefined");
@@ -74,35 +70,20 @@ namespace visvitalis.NotificationService
                                 editor.PutString(AppConstants.Session, await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(sessionObj)));
                                 editor.Commit();
 
-                                StartDownloadAsync(masknr, weeknr, justAdd);
+                                StartDownloadAsync(masknr, weeknr);
                             }
                         }
                     }
                     else
                     {
-                        if (!justAdd)
-                        {
-                            var rootObj = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
-                            rootObj.MaskNr = _masknr;
-                            rootObj.WeekNr = _weeknr;
-                            rootObj.Groupname = sessionObj.LoginResponse.Groupname;
+                        var rootObj = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
+                        rootObj.MaskNr = _masknr;
+                        rootObj.WeekNr = _weeknr;
+                        rootObj.Groupname = sessionObj.LoginResponse.Groupname;
 
-                            var newContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
-
-                            SaveContentInFiles(newContent, weeknr);
-                            SendNotification("Maske wurde runtergeladen", "Es wurden die Daten für die Woche " + weeknr + " runtergeladen. Diese können nun bearbeitet werden.");
-                        }
-                        else
-                        {
-                            var rootObj = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
-                            rootObj.MaskNr = _masknr;
-                            rootObj.WeekNr = _weeknr;
-                            rootObj.Groupname = sessionObj.LoginResponse.Groupname;
-
-                            var patients = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj.PatientMask));
-                            AddContentToFiles(patients, weeknr);
-                            SendNotification("Datensätze wurden hinzugefügt", "Es wurden neue Datensätze zur Maske hinzugefügt! Diese können nun genutzt werden.");
-                        }
+                        var newContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
+                        await CreateMaskFileAsync(int.Parse(_masknr), newContent);
+                        SendNotification("Maske wurde runtergeladen", "Es wurden die Daten (Nr. " + _masknr + ") runtergeladen. Diese können nun bearbeitet werden.");
                     }
                 }
             }
@@ -123,6 +104,7 @@ namespace visvitalis.NotificationService
             var notificationBuilder = new Notification.Builder(this)
                 .SetSmallIcon(Resource.Drawable.ic_launcher)
                 .SetContentTitle(title)
+                .SetContentText(message)
                 .SetStyle(textStyle)
                 .SetAutoCancel(true)
                 .SetDefaults(NotificationDefaults.All)
@@ -133,215 +115,68 @@ namespace visvitalis.NotificationService
         }
         #endregion
 
-        async void SaveContentInFiles(string content, int weekId)
+        async System.Threading.Tasks.Task<bool> CreateMaskFileAsync(int maskid, string content)
         {
-            await CreateFilesForWeek(content, weekId, false);
-            await SaveMaskForFuture(content, weekId, false);
+            var result = false;
+
+            await CreateFolderAsync();
+            await CreateFutureFileAsync(maskid, content);
+
+            return result;
         }
 
-        async void AddContentToFiles(string content, int weekId)
+        async System.Threading.Tasks.Task CreateFutureFileAsync(int maskid, string content)
         {
-            await CreateFilesForWeek(content, weekId, true);
-            await SaveMaskForFuture(content, weekId, true);
-        }
+            var filePath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks", "mask.json");
 
-        async System.Threading.Tasks.Task CreateFilesForWeek(string content, int weekId, bool justAdd)
-        {
-            await CreateWeekFolderAsync(weekId, justAdd);
-
-            var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
-            var firstDayOfTheWeek = GetFirstDateOfWeek(DateTime.Now.Year, weekId);
-
-            for (int i = 0; i < 7; i++)
+            using (var fs = File.Create(filePath))
             {
-                var theDate = firstDayOfTheWeek.AddDays(i);
-                var filePath = Path.Combine(FolderPath, AppConstants.DataFolder, _year, newWeekId, theDate.ToString("ddMMyy") + ".json");
-
-                if (justAdd)
-                {
-                    RootObject oldContent = null;
-                    using (var fs = File.OpenRead(filePath))
-                    {
-                        using (MemoryStream data = new MemoryStream())
-                        {
-                            fs.CopyTo(data);
-                            data.Seek(0, SeekOrigin.Begin);
-                            byte[] buf = new byte[data.Length];
-                            await data.ReadAsync(buf, 0, buf.Length);
-
-                            oldContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(Encoding.Default.GetString(data.ToArray())));
-                            PatientMask newPatients = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<PatientMask>(content));
-
-                            try
-                            {
-                                oldContent.PatientMask.PatientOperation.Tours[0].Patients.AddRange(newPatients.PatientOperation.Tours[0].Patients);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Debug("debug", "Exception[0]: " + ex.ToString());
-                            }
-
-                            try
-                            {
-                                oldContent.PatientMask.PatientOperation.Tours[1].Patients.AddRange(newPatients.PatientOperation.Tours[1].Patients);
-                            }
-                            catch(Exception ex)
-                            {
-                                Log.Debug("debug", "Exception[1]: " + ex.ToString());
-                            }
-
-                            newPatients = null;
-                            await data.FlushAsync();
-                        }
-                        await fs.FlushAsync();
-                    }
-
-                    using (var fs = File.OpenWrite(filePath))
-                    {
-                        var newContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(oldContent));
-                        var buffer = Encoding.UTF8.GetBytes(newContent);
-                        await fs.WriteAsync(buffer, 0, buffer.Length);
-                        await fs.FlushAsync();
-                    }
-                }
-                else
-                {
-                    using (var fs = File.Create(filePath))
-                    {
-                        var buffer = Encoding.UTF8.GetBytes(content);
-                        await fs.WriteAsync(buffer, 0, buffer.Length);
-                        await fs.FlushAsync();
-                    }
-                }
+                var buffer = Encoding.UTF8.GetBytes(content);
+                await fs.WriteAsync(buffer, 0, buffer.Length);
+                await fs.FlushAsync();
+                fs.Close();
             }
         }
-
-        private async System.Threading.Tasks.Task CreateWeekFolderAsync(int weekid, bool justAdd)
+        
+        private async System.Threading.Tasks.Task CreateFolderAsync()
         {
             await System.Threading.Tasks.Task.Factory.StartNew(() =>
             {
                 var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder);
 
-                if (!Directory.Exists(directoryPath) && !justAdd)
+                if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
 
-                var yearDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _year);
+                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _year);
 
-                if (!Directory.Exists(yearDirectoryPath) && !justAdd)
+                if (!Directory.Exists(directoryPath))
                 {
-                    Directory.CreateDirectory(yearDirectoryPath);
+                    Directory.CreateDirectory(directoryPath);
                 }
 
-                var newWeekId = (weekid < 10) ? "0" + weekid.ToString() : weekid.ToString();
-                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _year, newWeekId);
+                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _year, "temp");
 
-                if (!Directory.Exists(directoryPath) && !justAdd)
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
+                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _year, "temp", "old.data");
+
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
+                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks");
+
+                if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
                 }
             });
-        }
-
-        private DateTime GetFirstDateOfWeek(int year, int weekOfYear)
-        {
-            var jan1 = new DateTime(year, 1, 1);
-            var daysOffset = DayOfWeek.Thursday - jan1.DayOfWeek;
-
-            var firstThursday = jan1.AddDays(daysOffset);
-            var cal = CultureInfo.InvariantCulture.Calendar;
-            var firstWeek = cal.GetWeekOfYear(firstThursday, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
-
-            var weekNum = weekOfYear;
-            if (firstWeek <= 1)
-            {
-                weekNum -= 1;
-            }
-            var result = firstThursday.AddDays(weekNum * 7);
-            return result.AddDays(-3);
-        }
-
-
-        public async System.Threading.Tasks.Task SaveMaskForFuture(string content, int weeknr, bool justAdd)
-        {
-            var filePath = "";
-
-            if (!justAdd)
-            {
-                await System.Threading.Tasks.Task.Factory.StartNew(() =>
-                {
-                    var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks");
-
-                    if (!Directory.Exists(directoryPath))
-                    {
-                        Directory.CreateDirectory(directoryPath);
-                    }
-
-                    var maskFile = Path.Combine(directoryPath, "mask_" + weeknr + ".json");
-                    filePath = maskFile;
-                });
-
-                using (var fs = File.Create(filePath))
-                {
-                    var buffer = Encoding.UTF8.GetBytes(content);
-                    await fs.WriteAsync(buffer, 0, buffer.Length);
-                }
-            }
-            else
-            {
-                await System.Threading.Tasks.Task.Factory.StartNew(() =>
-                {
-                    var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks");
-                    var maskFile = Path.Combine(directoryPath, "mask_" + weeknr + ".json");
-                    filePath = maskFile;
-                });
-
-                RootObject oldContent = null;
-                using (var fs = File.OpenRead(filePath))
-                {
-                    using (MemoryStream data = new MemoryStream())
-                    {
-                        fs.CopyTo(data);
-                        data.Seek(0, SeekOrigin.Begin);
-                        byte[] buf = new byte[data.Length];
-                        await data.ReadAsync(buf, 0, buf.Length);
-
-                        oldContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(Encoding.Default.GetString(data.ToArray())));
-                        PatientMask newPatients = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.DeserializeObject<PatientMask>(content));
-
-                        try
-                        {
-                            oldContent.PatientMask.PatientOperation.Tours[0].Patients.AddRange(newPatients.PatientOperation.Tours[0].Patients);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug("debug", "Exception[0]: " + ex.ToString());
-                        }
-
-                        try
-                        {
-                            oldContent.PatientMask.PatientOperation.Tours[1].Patients.AddRange(newPatients.PatientOperation.Tours[1].Patients);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Debug("debug", "Exception[1]: " + ex.ToString());
-                        }
-
-                        newPatients = null;
-                        await data.FlushAsync();
-                    }
-                    await fs.FlushAsync();
-                }
-
-                using (var fs = File.OpenWrite(filePath))
-                {
-                    var newContent = await System.Threading.Tasks.Task.Factory.StartNew(() => JsonConvert.SerializeObject(oldContent));
-                    var buffer = Encoding.UTF8.GetBytes(newContent);
-                    await fs.WriteAsync(buffer, 0, buffer.Length);
-                    await fs.FlushAsync();
-                }
-            }
         }
     }
 }

@@ -32,6 +32,7 @@ namespace visvitalis
             {
                 Toast.MakeText(this, "Der Chat kann nicht geöffnet werden. Die Session ist abgelaufen.", ToastLength.Long).Show();
                 Finish();
+                return;
             }
 
             Init();

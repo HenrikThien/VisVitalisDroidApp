@@ -63,17 +63,23 @@ namespace visvitalis.NotificationService
                 {
                     using (var client = new ServerConnector())
                     {
-                        var response = await client.RegisterDeviceAsync(groupname, token);
-
-                        if (response != null && response.Valid)
+                        if (await client.IsNetworkAvailable(this))
                         {
-                            var editor = preferences.Edit();
-                            editor.PutString(AppConstants.DeviceToken, token);
-                            editor.Commit();
+                            var response = await client.RegisterDeviceAsync(groupname, token);
+
+                            if (response != null && response.Valid)
+                            {
+                                var editor = preferences.Edit();
+                                editor.PutString(AppConstants.DeviceToken, token);
+                                editor.Commit();
+                            }
                         }
                     }
                 }
             }
+
+            // stop this service..
+            StopService(new Intent(this, typeof(RegistrationIntentService)));
         }
 
         void Subscribe(string token)

@@ -36,16 +36,17 @@ namespace visvitalis.Recycler
         private List<Patient> _patientList = new List<Patient>();
         private LayoutInflater _inflater;
         private string _workerToken;
+        private bool _loadOldFile;
 
-        public static RecyclerPatientViewFragment CreateNewInstance(string time, string date, string workerToken)
+        public static RecyclerPatientViewFragment CreateNewInstance(bool loadOldFile, string time, string date, string workerToken)
         {
             var fragment = new RecyclerPatientViewFragment();
             var bundle = new Bundle();
             bundle.PutString("JSON_DATE", date);
             bundle.PutString("JSON_TIME", time);
             bundle.PutString("JSON_WORKER_TOKEN", workerToken);
+            bundle.PutBoolean("JSON_OLD_FILE", loadOldFile);
             fragment.Arguments = bundle;
-
             return fragment;
         }
 
@@ -57,16 +58,46 @@ namespace visvitalis.Recycler
             var jsonTime = Arguments.GetString("JSON_TIME");
             var jsonWorkerToken = Arguments.GetString("JSON_WORKER_TOKEN");
 
+            _loadOldFile = Arguments.GetBoolean("JSON_OLD_FILE");
             _workerToken = jsonWorkerToken;
 
             var tabView = inflater.Inflate(Resource.Layout.TabRecycler, container, false);
 
-            var patients = GetPatientList(jsonDate, jsonTime);
-            _patientList = patients;
+            //var patients = GetPatientList(jsonDate, jsonTime);
+            //_patientList = patients;
             _inflater = inflater;
 
-            mRecyclerItem = new RecyclerPatientItem(patients);
+            //mRecyclerItem = new RecyclerPatientItem(patients);
             mRecyclerView = tabView.FindViewById<RecyclerView>(Resource.Id.recyclerView);
+
+            // load settings
+            //var prefs = PreferenceManager.GetDefaultSharedPreferences(Activity);
+            //var number = int.Parse(prefs.GetString("prefSyncFrequency", "1"));
+            //mLayoutManager = new GridLayoutManager(Activity, number);
+
+            //mRecyclerView.SetLayoutManager(mLayoutManager);
+            //mAdapter = new RecyclerPatientViewAdapter(mRecyclerItem);
+            //mAdapter.ItemClick += OnItemClick;
+            //mAdapter.ItemLongClick += OnLongItemClick;
+
+            //mRecyclerView.SetAdapter(mAdapter);
+
+            return tabView;
+        }
+
+        public override void OnResume()
+        {
+            var jsonDate = Arguments.GetString("JSON_DATE");
+            var jsonTime = Arguments.GetString("JSON_TIME");
+            var jsonWorkerToken = Arguments.GetString("JSON_WORKER_TOKEN");
+
+            _loadOldFile = Arguments.GetBoolean("JSON_OLD_FILE");
+            _workerToken = jsonWorkerToken;
+
+            var patients = GetPatientList(jsonDate, jsonTime);
+            _patientList = patients;
+
+            mRecyclerItem = new RecyclerPatientItem(patients);
 
             // load settings
             var prefs = PreferenceManager.GetDefaultSharedPreferences(Activity);
@@ -80,7 +111,7 @@ namespace visvitalis.Recycler
 
             mRecyclerView.SetAdapter(mAdapter);
 
-            return tabView;
+            base.OnResume();
         }
 
         List<Patient> GetPatientList(string date, string time)
@@ -90,10 +121,12 @@ namespace visvitalis.Recycler
             DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
 
             _fileManager = new FileManager(date, _fileDateTime);
-            jsonMask = _fileManager.LoadFile();
+            jsonMask = _fileManager.LoadFile(_loadOldFile);
 
             _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
-            return _patientMask.PatientMask.GetEinsaetzeByTime(time);
+            _patientMask.PatientMask[0].PatientOperation.MaskDate = date;
+
+            return _patientMask.PatientMask[0].GetEinsaetzeByTime(time);
         }
 
         void OnItemClick(object sender, int position)

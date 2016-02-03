@@ -18,6 +18,20 @@ namespace visvitalis
             InitApp();
         }
 
+        protected override void OnPause()
+        {
+            var intent = new Intent(this, typeof(RegistrationIntentService));
+            StartService(intent);
+            base.OnPause();
+        }
+
+        protected override void OnResume()
+        {
+            var intent = new Intent(this, typeof(RegistrationIntentService));
+            StartService(intent);
+            base.OnResume();
+        }
+
         async void InitApp()
         {
             await TryLoadSession();

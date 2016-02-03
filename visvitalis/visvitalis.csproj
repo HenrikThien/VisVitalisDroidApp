@@ -103,6 +103,7 @@
     <Compile Include="Networking\Responses\AccessTokenResponse.cs" />
     <Compile Include="Networking\Responses\ValidMessageResponse.cs" />
     <Compile Include="Networking\Responses\LoginResponse.cs" />
+    <Compile Include="NotificationService\DownloadService.cs" />
     <Compile Include="NotificationService\RegistrationIntentService.cs" />
     <Compile Include="PatientListActivity.cs" />
     <Compile Include="Recycler\Patient\RecyclerPatientItem.cs" />

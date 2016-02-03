@@ -10,6 +10,11 @@ using visvitalis.Utils;
 using Android.Support.V7.App;
 using Toolbar = Android.Support.V7.Widget.Toolbar;
 using System.Threading.Tasks;
+using visvitalis.NotificationService;
+using Android.Util;
+using Newtonsoft.Json;
+using visvitalis.JSON;
+using visvitalis.Networking;
 
 namespace visvitalis
 {
@@ -35,6 +40,21 @@ namespace visvitalis
             SupportActionBar.SetIcon(null);
         }
 
+        protected override void OnPause()
+        {
+            var intent = new Intent(this, typeof(RegistrationIntentService));
+            StartService(intent);
+            base.OnPause();
+        }
+
+        protected override void OnResume()
+        {
+            var intent = new Intent(this, typeof(RegistrationIntentService));
+            StartService(intent);
+
+            base.OnResume();
+        }
+
         private void DateBox_LongClick(object sender, View.LongClickEventArgs e)
         {
             var dateBox = FindViewById<EditText>(Resource.Id.editText2);
@@ -45,6 +65,7 @@ namespace visvitalis
         {
             var workerToken = FindViewById<EditText>(Resource.Id.editText1).Text;
             var fileDate = FindViewById<EditText>(Resource.Id.editText2).Text;
+            var oldFile = false;
 
             if (!string.IsNullOrEmpty(workerToken) && !string.IsNullOrEmpty(fileDate))
             {
@@ -56,23 +77,37 @@ namespace visvitalis
 
                     using (var fileManager = new FileManager(fileDate, result))
                     {
-                        var content = await fileManager.LoadFileAsync();
-                        _progressDialog.Dismiss();
+                        var content = await fileManager.SearchOldFileContent(DateTime.Now.Year.ToString());
 
                         if (content == "[]")
                         {
-                            Toast.MakeText(this, "Es existiert keine Datei für das Datum!", ToastLength.Long).Show();
-                            var intent = new Intent();
-                            intent.SetClass(this, typeof(CreateMaskActivity));
-                            StartActivity(intent);
-                            return;
+                            if (result.Date == DateTime.Now.Date)
+                            {
+                                content = await fileManager.LoadFileAsync();
+
+                                if (content == "[]")
+                                {
+                                    content = await fileManager.CreateFileAsync();
+                                }
+                            }
+                            else
+                            {
+                                Toast.MakeText(this, "Es existiert keine Datei für das Datum.", ToastLength.Short).Show();
+                            }
+                        }
+                        else
+                        {
+                            oldFile = true;
                         }
 
+                        _progressDialog.Dismiss();
+                        
                         var nextIntent = new Intent();
                         nextIntent.SetClass(this, typeof(PatientListActivity));
                         nextIntent.PutExtra(AppConstants.JsonMask, content);
                         nextIntent.PutExtra(AppConstants.FileDate, fileDate);
                         nextIntent.PutExtra(AppConstants.FileWorkerToken, workerToken);
+                        nextIntent.PutExtra(AppConstants.LoadOldFile, oldFile);
                         StartActivity(nextIntent);
                     }
                 }
@@ -128,6 +163,11 @@ namespace visvitalis
                         StartActivity(intent);
                         return true;
                     }
+                case Resource.Id.finish:
+                    {
+                        AskToUpload();
+                        return true;
+                    }
                 case Resource.Id.logout:
                     {
                         AskToLogout();
@@ -167,6 +207,107 @@ namespace visvitalis
             await StaticHolder.DestorySession(this);
 
             return activity;
+        }
+
+        public async void UploadDataAsync()
+        {
+            _progressDialog = new ProgressDialog(this);
+            _progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
+            _progressDialog.SetCancelable(false);
+            _progressDialog.SetTitle("Hochladen...");
+            _progressDialog.SetMessage("Daten werden hochgeladen, bitte warten...");
+            _progressDialog.SetCanceledOnTouchOutside(false);
+            _progressDialog.Show();
+
+            try
+            {
+                using (var fileManager = new FileManager("", DateTime.Now))
+                {
+                    var listContent = await fileManager.GetFileContentFromTempAsync(DateTime.Now.Year.ToString());
+
+                    if (listContent.Count == 0)
+                    {
+                        _progressDialog.Dismiss();
+                        _progressDialog = null;
+                        CreateAlert("Fehler", "Es wurden keine Dateien zum Hochladen gefunden!");
+                        return;
+                    }
+
+                    var rootObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(listContent[0]));
+                    listContent.RemoveAt(0);
+
+                    var startDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
+                    var endDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
+
+                    foreach (var content in listContent)
+                    {
+                        var deserializedContent = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
+                        rootObj.PatientMask.AddRange(deserializedContent.PatientMask);
+                        endDatum = deserializedContent.PatientMask[0].PatientOperation.MaskDate;
+                    }
+
+                    rootObj.DatumStart = startDatum;
+                    rootObj.DatumEnd = endDatum;
+
+                    var newContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
+
+                    using (var client = new ServerConnector())
+                    {
+                        if (await client.IsNetworkAvailable(this))
+                        {
+                            if (await client.IsServerAvailableAsync())
+                            {
+                                try
+                                {
+                                    var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newContent);
+                                    var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
+                                    Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
+
+                                    await fileManager.MoveOldFilesAsync(DateTime.Now.Year.ToString());
+                                    StartService(new Intent(this, typeof(DownloadService)));
+                                }
+                                catch
+                                {
+                                    CreateAlert("Fehler", "Fehler beim Hochladen der Daten.");
+                                    _progressDialog.Dismiss();
+                                    _progressDialog = null;
+                                }
+                            }
+                            else
+                            {
+                                CreateAlert("Datenserver", "Der Server scheint derzeit nicht erreichbar zu sein. Versuchen Sie es später erneut.");
+                                _progressDialog.Dismiss();
+                                _progressDialog = null;
+                            }
+                        }
+                        else
+                        {
+                            CreateAlert("Internetverbindung", "Es ist keine Internetverbindung verfügbar.");
+                            _progressDialog.Dismiss();
+                            _progressDialog = null;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("exception", ex.ToString());
+                _progressDialog.Dismiss();
+                _progressDialog = null;
+            }
+
+            _progressDialog.Dismiss();
+            _progressDialog = null;
+        }
+
+        void AskToUpload()
+        {
+            var alert = new Android.App.AlertDialog.Builder(this);
+            alert.SetTitle("Daten zum Server senden?");
+            alert.SetMessage("Sind Sie sicher, dass die Daten zum Server geschickt werden sollen?\nWurden alle Daten ausgefüllt?");
+            alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
+            alert.SetPositiveButton("Absenden", (sender, args) => { UploadDataAsync(); });
+            alert.Show();
         }
     }
 }
