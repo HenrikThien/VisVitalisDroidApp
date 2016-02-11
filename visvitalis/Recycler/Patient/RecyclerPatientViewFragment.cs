@@ -62,26 +62,8 @@ namespace visvitalis.Recycler
             _workerToken = jsonWorkerToken;
 
             var tabView = inflater.Inflate(Resource.Layout.TabRecycler, container, false);
-
-            //var patients = GetPatientList(jsonDate, jsonTime);
-            //_patientList = patients;
             _inflater = inflater;
-
-            //mRecyclerItem = new RecyclerPatientItem(patients);
             mRecyclerView = tabView.FindViewById<RecyclerView>(Resource.Id.recyclerView);
-
-            // load settings
-            //var prefs = PreferenceManager.GetDefaultSharedPreferences(Activity);
-            //var number = int.Parse(prefs.GetString("prefSyncFrequency", "1"));
-            //mLayoutManager = new GridLayoutManager(Activity, number);
-
-            //mRecyclerView.SetLayoutManager(mLayoutManager);
-            //mAdapter = new RecyclerPatientViewAdapter(mRecyclerItem);
-            //mAdapter.ItemClick += OnItemClick;
-            //mAdapter.ItemLongClick += OnLongItemClick;
-
-            //mRecyclerView.SetAdapter(mAdapter);
-
             return tabView;
         }
 
@@ -156,7 +138,7 @@ namespace visvitalis.Recycler
             var abfahrtBtn = dialog.FindViewById<Button>(Resource.Id.button2);
             var leistungFailedBtn = dialog.FindViewById<Button>(Resource.Id.button4);
 
-            if (_fileDateTime.Date != DateTime.Now.Date || (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken != _workerToken))
+            if (_loadOldFile || _fileDateTime.Date != DateTime.Now.Date || (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken != _workerToken))
             {
                 ankunftBtn.Enabled = false;
                 ankunftBtn.SetBackgroundColor(Color.Black);
@@ -431,6 +413,14 @@ namespace visvitalis.Recycler
             performanceText.Text = patient.LeistungAsString();
 
             if (patient.Arrival == "00:01:00" || patient.Departure == "00:02:00" || (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken != _workerToken))
+            {
+                performanceText.Enabled = false;
+                performanceBtn.Enabled = false;
+                performanceBtn.SetBackgroundColor(Color.Black);
+                performanceBtn.SetTextColor(Color.White);
+            }
+
+            if (_loadOldFile || _fileDateTime.Date != DateTime.Now.Date || (!string.IsNullOrEmpty(patient.WorkerToken) && patient.WorkerToken != _workerToken))
             {
                 performanceText.Enabled = false;
                 performanceBtn.Enabled = false;

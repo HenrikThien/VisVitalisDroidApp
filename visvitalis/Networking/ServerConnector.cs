@@ -15,11 +15,16 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using Android.Util;
 using Android.Preferences;
+using System.IO;
+using Org.Apache.Http.Util;
 
 namespace visvitalis.Networking
 {
     public sealed class ServerConnector : IDisposable
     {
+        public delegate void NotifyUserDownloadCompleted();
+        public event NotifyUserDownloadCompleted OnNotifyUserDownloadCompleted;
+
         public ServerConnector()
         {
 
@@ -237,6 +242,95 @@ namespace visvitalis.Networking
         }
         #endregion
 
+        #region Check for updates
+        public async Task<string> CheckForUpdates(Context context, Session session, int version)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    client.BaseAddress = new System.Uri("http://" + AppConstants.ServerIP);
+
+                    var content = new FormUrlEncodedContent(new[]
+                    {
+                        new KeyValuePair<string, string>("access_token", session.AccessTokenResponse.AccessToken),
+                        new KeyValuePair<string, string>("app_version", version.ToString())
+                    });
+
+                    var httpResponse = await client.PostAsync("/API/checkupdate/", content);
+
+                    if (httpResponse.IsSuccessStatusCode)
+                    {
+                        var response = await httpResponse.Content.ReadAsStringAsync();
+                        return response;
+                    }
+                    else if (httpResponse.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        var newAccessTokenResponse = await RefreshToken(session);
+
+                        if (newAccessTokenResponse != null)
+                        {
+                            session.AccessTokenResponse = newAccessTokenResponse;
+                            var manager = PreferenceManager.GetDefaultSharedPreferences(context);
+                            var editor = manager.Edit();
+                            var sessionJson = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(session));
+
+                            editor.PutString(AppConstants.Session, sessionJson);
+                            editor.Commit();
+
+                            return await CheckForUpdates(context, session, version);
+                        }
+                        else
+                        {
+                            return "{valid: false, message: \"failed.\"}";
+                        }
+                    }
+                    else
+                    {
+                        return "{valid: false, message: \"failed.\"}";
+                    }
+                }
+            }
+            catch
+            {
+                return "{valid: false, message: \"failed.\"}";
+            }
+        }
+        #endregion
+
+        #region Download updates
+        public async Task<bool> DownloadUpdatesAsync(WebClient client, int version)
+        {
+            try
+            {
+                using (client)
+                {
+                    var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
+                    var downloadPath = Path.Combine(downloadFolder, "visvitalis-" + version + ".apk");
+
+                    await Task.Factory.StartNew(() =>
+                    {
+                        if (File.Exists(downloadPath))
+                        {
+                            File.Delete(downloadPath);
+                        }
+                    });
+
+                    var appBytes = await client.DownloadDataTaskAsync("http://" + AppConstants.ServerIP + "/API/downloadupdate/" + version.ToString());
+                    await Task.Factory.StartNew(() => File.WriteAllBytes(downloadPath, appBytes));
+
+                    NotifyUser_DownloadCompleted();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        #endregion
+
         #region Refresh token
         public async Task<AccessTokenResponse> RefreshToken(Session session)
         {
@@ -406,6 +500,14 @@ namespace visvitalis.Networking
                 GC.SuppressFinalize(this);
             }
             catch { }
+        }
+
+        public void NotifyUser_DownloadCompleted()
+        {
+            if (OnNotifyUserDownloadCompleted != null)
+            {
+                OnNotifyUserDownloadCompleted();
+            }
         }
     }
 }

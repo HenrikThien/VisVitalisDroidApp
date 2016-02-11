@@ -37,5 +37,10 @@
         android:editable="false"
         android:title="Firma"
         android:summary="VIS VITALIS - http://visvitalis.info" />
+    <Preference
+        android:key="appVersion"
+        android:editable="false"
+        android:title="Aktuelle App Version"
+        android:summary="" />
   </PreferenceCategory>
 </PreferenceScreen>

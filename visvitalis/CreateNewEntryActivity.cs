@@ -1,4 +1,3 @@
-
 using Android.App;
 using Android.OS;
 using Android.Support.V7.App;
@@ -23,8 +22,7 @@ namespace visvitalis
         {
             var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
-
-            SupportActionBar.SetIcon(null);
+            
             SupportActionBar.SetDisplayHomeAsUpEnabled(true);
             SupportActionBar.SetHomeButtonEnabled(true);
         }

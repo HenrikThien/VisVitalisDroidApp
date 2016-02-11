@@ -7,12 +7,15 @@ using Android.Views;
 using Java.Lang;
 using visvitalis.Recycler;
 using System.Collections.Generic;
+using Android.Util;
+using Android.Support.V4.View;
 
 namespace visvitalis.Fragments
 {
     public class CompatPagerAdapter : FragmentPagerAdapter
     {
-        private readonly string[] Titles = { "Morgens", "Abends" };
+        public ViewPager ViewPager { get; set; }
+        private readonly string[] Titles = { "Morgens", "Abends", "Neu" };
         private readonly Dictionary<int, string> _fragmentTags;
         private readonly string _date;
         private readonly string _text;
@@ -53,7 +56,8 @@ namespace visvitalis.Fragments
             {
                 var frg = (Android.Support.V4.App.Fragment)obj;
                 string tag = frg.Tag;
-                _fragmentTags.Add(position, tag);
+                if (!_fragmentTags.ContainsKey(position))
+                    _fragmentTags.Add(position, tag);
             }
 
             return obj;
@@ -61,23 +65,45 @@ namespace visvitalis.Fragments
 
         public Android.Support.V4.App.Fragment GetFragment(int position)
         {
-            string tag = _fragmentTags[position];
-            if (tag == null)
-                return null;
-            return _fragmentManager.FindFragmentByTag(tag);
+            if (_fragmentTags.ContainsKey(position))
+            {
+                string tag = _fragmentTags[position];
+                if (tag == null)
+                    return null;
+                return _fragmentManager.FindFragmentByTag(tag);
+            }
+            return null;
         }
 
         public override Android.Support.V4.App.Fragment GetItem(int position)
         {
-            RecyclerPatientViewFragment fragment = null;
+            Android.Support.V4.App.Fragment fragment = null;
             string pageTitle = GetPageTitle(position).ToLower();
 
-            fragment = RecyclerPatientViewFragment.CreateNewInstance(_loadOldFile, "morgens", _date, _workerToken);
-
-             if (pageTitle == "abends")
+            if (position == 0)
+            {
+                fragment = RecyclerPatientViewFragment.CreateNewInstance(_loadOldFile, "morgens", _date, _workerToken);
+            }
+            else if (position == 1)
+            {
                 fragment = RecyclerPatientViewFragment.CreateNewInstance(_loadOldFile, "abends", _date, _workerToken);
+            }
+            else
+            {
+                var frg = NewEntryFragment.CreateInstance(_date);
+                frg.OnTabNeedSwitchEvent += Frg_OnTabNeedSwitchEvent;
+                return frg;
+            }
 
             return fragment;
+        }
+
+        private void Frg_OnTabNeedSwitchEvent(int position)
+        {
+            if (ViewPager != null)
+            {
+                ViewPager.SetCurrentItem(position, false);
+            }
         }
     }
 }

@@ -1,43 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:background="@color/background">
+    android:layout_height="fill_parent">
     <include
         android:id="@+id/toolbar"
         layout="@layout/toolbar" />
-    <TextView
-        android:text="@string/login_title"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:layout_width="match_parent"
+    <RelativeLayout
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:id="@+id/textView1"
-        android:gravity="center_horizontal"
-        android:layout_marginTop="20dp"
-        android:layout_marginBottom="30dp" />
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/editText1"
-        android:hint="Gruppenname"
-        android:layout_marginRight="10dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginBottom="10dp" />
-    <EditText
-        android:inputType="textPassword"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/editText2"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:hint="Passwort"
-        android:layout_marginBottom="20dp" />
-    <Button
-        android:text="Login"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/button1"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp" />
-</LinearLayout>
+        android:layout_below="@+id/toolbar"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="80dp"
+        android:background="#fff"
+        android:elevation="4dp"
+        android:orientation="vertical"
+        android:padding="10dp">
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="30dp">
+            <EditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/editText1"
+                android:hint="Gruppenname"
+                android:drawableLeft="@drawable/user"
+                android:layout_marginRight="10dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginBottom="10dp" />
+            <EditText
+                android:inputType="textPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/editText2"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:drawableLeft="@drawable/lock"
+                android:hint="Passwort"
+                android:layout_marginBottom="20dp" />
+            <Button
+                android:text="Login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/button1"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp" />
+        </LinearLayout>
+    </RelativeLayout>
+    <ImageButton
+        android:id="@+id/user_profile_photo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_below="@+id/login_title"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="75dp"
+        android:background="@drawable/user_profile_image_background"
+        android:elevation="4dp"
+        android:src="@drawable/ic_launcher" />
+</RelativeLayout>

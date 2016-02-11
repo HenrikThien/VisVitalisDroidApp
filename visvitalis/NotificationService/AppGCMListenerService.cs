@@ -37,6 +37,10 @@ namespace visvitalis.NotificationService
             {
                 StartDownloadAsync(_masknr, int.Parse(_weeknr));
             }
+            else if (type == "update")
+            {
+                SendBroadcast(new Intent(this, typeof(UpdateReceiver)));
+            }
         }
 
         async void StartDownloadAsync(string masknr, int weeknr)

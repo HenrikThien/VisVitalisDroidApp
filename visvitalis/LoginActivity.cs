@@ -29,21 +29,7 @@ namespace visvitalis
 
             var toolbar = FindViewById<Toolbar>(Resource.Id.toolbar);
             SetSupportActionBar(toolbar);
-
-            SupportActionBar.SetIcon(null);
-            SupportActionBar.SetDisplayShowHomeEnabled (true);
-            SupportActionBar.SetIcon (Resources.GetDrawable (Resource.Drawable.ic_launcher));
-
-			var typeface = Typeface.CreateFromAsset (this.Assets, "fonts/Generica.otf");
-			var loginTitle = FindViewById<TextView> (Resource.Id.textView1);
-
-			loginTitle.SetTypeface (typeface, TypefaceStyle.Normal);
-			loginTitle.TextSize = 35;
-
-			var st = new SpannableString("  " + "Vis Vitalis");
-			st.SetSpan (new TypefaceSpan ("fonts/Generica.otf"), 0, st.Length (), SpanTypes.ExclusiveExclusive);
-
-            SupportActionBar.TitleFormatted = st;
+            SupportActionBar.Title = "Mitarbeiter Login";
 
             var loginBtn = FindViewById<Button>(Resource.Id.button1);
             CheckPlayService(loginBtn);
@@ -166,7 +152,7 @@ namespace visvitalis
             //    return false;
             //}
 
-            return true;
+            return await Task.Factory.StartNew(() => true);
         }
     }
 }

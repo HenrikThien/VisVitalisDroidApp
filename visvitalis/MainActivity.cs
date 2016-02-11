@@ -15,6 +15,7 @@ using Android.Util;
 using Newtonsoft.Json;
 using visvitalis.JSON;
 using visvitalis.Networking;
+using System.IO;
 
 namespace visvitalis
 {
