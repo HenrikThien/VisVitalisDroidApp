@@ -84,10 +84,10 @@ namespace visvitalis.NotificationService
                                     .SetOngoing(true)
                                     .SetSmallIcon(Android.Resource.Drawable.StatSysDownload);
 
-                                if (await client.DownloadUpdatesAsync(webclient, version: msg.NewestVersion))
+                                if (await client.DownloadUpdatesAsync(webclient, msg.NewestVersion))
                                 {
                                     fileId = msg.NewestVersion;
-                                    Toast.MakeText(this, msg.Message, ToastLength.Short).Show();
+                                    client.NotifyUser_DownloadCompleted();
                                 }
                                 else
                                 {
@@ -102,26 +102,14 @@ namespace visvitalis.NotificationService
                         catch (Exception ex)
                         {
                             mBuilder = new NotificationCompat.Builder(this);
-                            mBuilder.SetContentTitle("VisVitalis App: Update nicht möglich.");
-                            mBuilder.SetContentText("Das herunterladen des Updates ist derzeit nicht möglich.")
-                                .SetSmallIcon(Resource.Drawable.ic_launcher);
+                            mBuilder.SetContentTitle("VisVitalis App: Update nicht möglich.")
+                            .SetSmallIcon(Resource.Drawable.ic_launcher);
 
-                            var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
-                            var downloadPath = Path.Combine(downloadFolder, "error_log.txt");
-
-                            await Task.Factory.StartNew(() =>
-                            {
-                                if (!File.Exists(downloadPath))
-                                    File.Create(downloadPath);
-                            });
-
-                            using (var writer = new StreamWriter(downloadPath))
-                            {
-                                await writer.WriteAsync(ex.ToString());
-                                await writer.FlushAsync();
-                                writer.Close();
-                            }
-
+                            var textStyle = new NotificationCompat.BigTextStyle();
+                            string longTextMessage = ex.ToString();
+                            textStyle.BigText(longTextMessage);
+                            textStyle.SetSummaryText("Jetzt mit der App öffnen!");
+                            mBuilder.SetStyle(textStyle);
                             mNotifyManager.Notify(id, mBuilder.Build());
                         }
                     }
@@ -152,14 +140,8 @@ namespace visvitalis.NotificationService
 
         private void Webclient_DownloadFileCompleted()
         {
-            var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
-            var downloadPath = Path.Combine(downloadFolder, "visvitalis-" + fileId + ".apk");
-
-            var intent = new Intent(Intent.ActionView);
-            intent.SetDataAndType(Android.Net.Uri.FromFile(new Java.IO.File(downloadPath)), "application/vnd.android.package-archive");
-            intent.SetFlags(ActivityFlags.NewTask);
-            intent.PutExtra("FILE_APK_PATH", downloadPath);
-
+            var intent = new Intent(this, typeof(SettingsActivity));
+            intent.PutExtra("SCROLL_2_BOTTOM", true);
             var pendingIntent = PendingIntent.GetActivity(this, 0, intent, PendingIntentFlags.UpdateCurrent | PendingIntentFlags.OneShot);
 
             var textStyle = new NotificationCompat.BigTextStyle();

@@ -14,30 +14,8 @@ namespace visvitalis
         protected override void OnCreate(Bundle bundle)
         {
 			base.OnCreate (bundle);
-
-            var installReceiver = new AppInstallBroadcastReceiver();
-            installReceiver.OnUpdateInstalled += InstallReceiver_OnUpdateInstalled;
-
-            var intentFilter = new IntentFilter();
-            intentFilter.AddAction(Intent.ActionPackageChanged);
-            intentFilter.AddAction(Intent.ActionPackageReplaced);
-
-            try
-            {
-                RegisterReceiver(installReceiver, intentFilter);
-            }
-            catch {
-                UnregisterReceiver(installReceiver);
-                RegisterReceiver(installReceiver, intentFilter);
-            }
-
             StaticHolder.SessionHolder = new Networking.Session();
             InitApp();
-        }
-
-        private void InstallReceiver_OnUpdateInstalled(BroadcastReceiver receiver)
-        {
-            UnregisterReceiver(receiver);
         }
 
         protected override void OnPause()

@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 using Android.App;
 using Android.Content;
 using Android.OS;
-using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using visvitalis.JSON;
@@ -15,7 +13,6 @@ using System.Globalization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Android.Support.V7.Widget;
-using Android.Util;
 using Android.Graphics;
 using System.Threading;
 using Android.Preferences;
@@ -24,6 +21,11 @@ namespace visvitalis.Recycler
 {
     internal class RecyclerPatientViewFragment : Android.Support.V4.App.Fragment
     {
+        private const string StartTime = "00:01";
+        private const string EndTime = "00:02";
+        private const int Km = 0;
+        private const string Performance = "xx";
+
         private RecyclerView mRecyclerView;
         private RecyclerView.LayoutManager mLayoutManager;
         private RecyclerPatientViewAdapter mAdapter;
@@ -69,6 +71,7 @@ namespace visvitalis.Recycler
 
         public override void OnResume()
         {
+            base.OnResume();
             var jsonDate = Arguments.GetString("JSON_DATE");
             var jsonTime = Arguments.GetString("JSON_TIME");
             var jsonWorkerToken = Arguments.GetString("JSON_WORKER_TOKEN");
@@ -92,8 +95,6 @@ namespace visvitalis.Recycler
             mAdapter.ItemLongClick += OnLongItemClick;
 
             mRecyclerView.SetAdapter(mAdapter);
-
-            base.OnResume();
         }
 
         List<Patient> GetPatientList(string date, string time)
@@ -105,10 +106,15 @@ namespace visvitalis.Recycler
             _fileManager = new FileManager(date, _fileDateTime);
             jsonMask = _fileManager.LoadFile(_loadOldFile);
 
-            _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
-            _patientMask.PatientMask[0].PatientOperation.MaskDate = date;
+            if (jsonMask != "[]")
+            {
+                _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
+                _patientMask.PatientMask[0].PatientOperation.MaskDate = date;
 
-            return _patientMask.PatientMask[0].GetEinsaetzeByTime(time);
+                return _patientMask.PatientMask[0].GetEinsaetzeByTime(time);
+            }
+
+            return new List<Patient>();
         }
 
         void OnItemClick(object sender, int position)
@@ -238,25 +244,20 @@ namespace visvitalis.Recycler
             {
                 Toast.MakeText(Activity, "Leistung wurde nicht erbracht.", ToastLength.Short).Show();
 
-                const string startTime = "00:01:00";
-                const string endTime = "00:02:00";
-                const int km = 0;
-                const string performance = "xxx";
-
-                patient.Arrival = startTime;
+                patient.Arrival = StartTime;
                 patient.Performances.Clear();
-                patient.Performances.Add(performance);
+                patient.Performances.Add(Performance);
 
                 var objInList = (_patientList[position]);
                 objInList.Arrival = patient.Arrival;
                 objInList.Performances.Clear();
-                objInList.Performances.Add(performance);
+                objInList.Performances.Add(Performance);
 
                 ankunftBtn.Enabled = false;
                 ankunftBtn.SetBackgroundColor(Color.Black);
                 ankunftBtn.SetTextColor(Color.White);
 
-                patient.Departure = endTime;
+                patient.Departure = EndTime;
                 objInList = (_patientList[position]);
                 objInList.Departure = patient.Departure;
 
@@ -264,9 +265,9 @@ namespace visvitalis.Recycler
                 abfahrtBtn.SetBackgroundColor(Color.Black);
                 abfahrtBtn.SetTextColor(Color.White);
 
-                patient.Km = km.ToString();
+                patient.Km = Km.ToString();
                 objInList = (_patientList[position]);
-                objInList.Km = km.ToString();
+                objInList.Km = Km.ToString();
 
                 kilometerBtn.Enabled = false;
                 kilometerBtn.SetBackgroundColor(Color.Black);
@@ -304,7 +305,7 @@ namespace visvitalis.Recycler
 
                 if (string.IsNullOrEmpty(patient.Arrival))
                 {
-                    patient.Arrival = DateTime.Now.ToString("HH:mm:ss");
+                    patient.Arrival = DateTime.Now.ToString("HH:mm");
                     var objInList = (_patientList[position]);
                     objInList.Arrival = patient.Arrival;
 
@@ -350,7 +351,7 @@ namespace visvitalis.Recycler
 
                 if (string.IsNullOrEmpty(patient.Departure))
                 {
-                    patient.Departure = DateTime.Now.ToString("HH:mm:ss");
+                    patient.Departure = DateTime.Now.ToString("HH:mm");
                     var objInList = (_patientList[position]);
                     objInList.Departure = patient.Departure;
 

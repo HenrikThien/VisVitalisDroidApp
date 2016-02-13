@@ -12,10 +12,12 @@ using Android.Widget;
 using Android.Util;
 using Java.IO;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace visvitalis.Utils
 {
     [BroadcastReceiver]
+    [IntentFilter(new[] { Intent.ActionPackageChanged })]
     class AppInstallBroadcastReceiver : BroadcastReceiver
     {
         public delegate void UpdateInstalled(BroadcastReceiver receiver);
@@ -23,19 +25,26 @@ namespace visvitalis.Utils
 
         public override void OnReceive(Context context, Intent intent)
         {
-            var path = intent.GetStringExtra("FILE_APK_PATH");
-            var file = new File(path);
+            if (intent != null && intent.Data != null && context.PackageName.Equals(intent.Data.SchemeSpecificPart))
+            {
+                var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
+                var downloadUpdateFolder = Path.Combine(downloadFolder, "vv-updates");
 
-            Init(file);
+                var downloadPath = Path.Combine(downloadUpdateFolder, "visvitalis.apk");
+
+                var file = new Java.IO.File(downloadPath);
+
+                Init(file);
+            }
         }
 
-        private async void Init(File file)
+        private async void Init(Java.IO.File file)
         {
             await RemoveAsync(file);
             AppInstalled(this);
         }
 
-        private async Task RemoveAsync(File file)
+        private async Task RemoveAsync(Java.IO.File file)
         {
             await Task.Factory.StartNew(() =>
             {

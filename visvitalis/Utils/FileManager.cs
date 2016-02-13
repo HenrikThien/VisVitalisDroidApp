@@ -45,12 +45,15 @@ namespace visvitalis.Utils
             return maskFileContent;
         }
 
-        public async Task<string> LoadFileAsync()
+        public async Task<string> LoadFileAsync(bool oldFile = false)
         {
             var weekId = GetIso8601WeekOfYear(_dateTime);
             var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
 
             var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
+            if (oldFile)
+                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp", "old.data");
+
             var filePath = Path.Combine(directoryPath, _date + ".json");
 
             var fileContent = "";
@@ -135,6 +138,7 @@ namespace visvitalis.Utils
                     await writer.WriteAsync(content);
                     success = true;
                     await writer.FlushAsync();
+                    writer.Close();
                 }
             }
 

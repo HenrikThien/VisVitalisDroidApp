@@ -94,6 +94,8 @@ namespace visvitalis
                             else
                             {
                                 Toast.MakeText(this, "Es existiert keine Datei für das Datum.", ToastLength.Short).Show();
+                                _progressDialog.Dismiss();
+                                return;
                             }
                         }
                         else

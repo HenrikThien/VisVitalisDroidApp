@@ -15,8 +15,9 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using Android.Util;
 using Android.Preferences;
-using System.IO;
 using Org.Apache.Http.Util;
+using System.IO;
+using Java.IO;
 
 namespace visvitalis.Networking
 {
@@ -303,29 +304,36 @@ namespace visvitalis.Networking
         {
             try
             {
+                var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
+                var downloadUpdateFolder = Path.Combine(downloadFolder, "vv-updates");
+                if (!Directory.Exists(downloadUpdateFolder))
+                    Directory.CreateDirectory(downloadUpdateFolder);
+                var downloadPath = Path.Combine(downloadUpdateFolder, "visvitalis.apk");
+                byte[] appData = null;
+
                 using (client)
                 {
-                    var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
-                    var downloadPath = Path.Combine(downloadFolder, "visvitalis-" + version + ".apk");
-
                     await Task.Factory.StartNew(() =>
                     {
-                        if (File.Exists(downloadPath))
+                        if (System.IO.File.Exists(downloadPath))
                         {
-                            File.Delete(downloadPath);
+                            System.IO.File.Delete(downloadPath);
                         }
                     });
 
-                    var appBytes = await client.DownloadDataTaskAsync("http://" + AppConstants.ServerIP + "/API/downloadupdate/" + version.ToString());
-                    await Task.Factory.StartNew(() => File.WriteAllBytes(downloadPath, appBytes));
+                    appData = await client.DownloadDataTaskAsync("http://" + AppConstants.ServerIP + "/API/downloadupdate/" + version.ToString());
+                }
 
-                    NotifyUser_DownloadCompleted();
+                using (var file = System.IO.File.Create(downloadPath))
+                {
+                    await file.WriteAsync(appData, 0, appData.Length);
                 }
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug("D/exception", ex.ToString());
                 return false;
             }
         }

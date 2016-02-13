@@ -38,7 +38,8 @@ namespace visvitalis.NotificationService
 
         private async void DoWork()
         {
-            try {
+            try
+            {
                 var preferences = PreferenceManager.GetDefaultSharedPreferences(this);
                 var groupname = preferences.GetString(AppConstants.GroupName, "undefined");
                 var session = preferences.GetString(AppConstants.Session, "undefined");
@@ -75,13 +76,13 @@ namespace visvitalis.NotificationService
                         else
                         {
                             var rootObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
-                            rootObj.MaskNr = "0";
                             rootObj.WeekNr = "0";
                             rootObj.Groupname = sessionObj.LoginResponse.Groupname;
+                            var newContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
 
                             if (rootObj.IsNew)
                             {
-                                await CreateMaskFileAsync(0, content);
+                                await CreateMaskFileAsync(0, newContent);
                                 SendNotification("Maske wurde runtergeladen", "Es wurden neue Daten heruntergeladen. Diese können nun bearbeitet werden.");
                             }
                         }
@@ -93,7 +94,7 @@ namespace visvitalis.NotificationService
                 
             }
 
-            StopService(new Intent(this, typeof(DownloadService)));
+            StopSelf();
         }
 
         #region Notification
