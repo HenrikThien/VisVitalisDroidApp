@@ -17,7 +17,7 @@ using System.IO;
 namespace visvitalis.Utils
 {
     [BroadcastReceiver]
-    [IntentFilter(new[] { Intent.ActionPackageChanged })]
+    [IntentFilter(new[] { Intent.ActionPackageChanged, Intent.ActionPackageReplaced, Intent.ActionInstallPackage })]
     class AppInstallBroadcastReceiver : BroadcastReceiver
     {
         public delegate void UpdateInstalled(BroadcastReceiver receiver);
@@ -29,9 +29,7 @@ namespace visvitalis.Utils
             {
                 var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
                 var downloadUpdateFolder = Path.Combine(downloadFolder, "vv-updates");
-
                 var downloadPath = Path.Combine(downloadUpdateFolder, "visvitalis.apk");
-
                 var file = new Java.IO.File(downloadPath);
 
                 Init(file);

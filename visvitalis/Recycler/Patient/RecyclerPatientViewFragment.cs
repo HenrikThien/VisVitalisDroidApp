@@ -135,7 +135,7 @@ namespace visvitalis.Recycler
             var title = dialog.FindViewById<TextView>(Resource.Id.alertTitle);
             title.Text = "Zeiten abspeichern.";
             var desc = dialog.FindViewById<TextView>(Resource.Id.alertDescription);
-            desc.Text = "Zeiten abspeichern für Patient " + patient.PatientName + "";
+            desc.Text = "Zeiten abspeichern für den Patienten";
 
             var negativeBtn = dialog.GetButton((int)DialogButtonType.Negative);
             var kilometerText = dialog.FindViewById<EditText>(Resource.Id.kmEditText);

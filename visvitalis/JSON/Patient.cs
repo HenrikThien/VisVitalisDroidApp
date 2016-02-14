@@ -48,7 +48,7 @@ namespace visvitalis.JSON
             get { return Nr + " - " + PatientName; }
         }
 
-        public string SecondLine()
+        public string GetPatientArrival()
         {
             var builder = new StringBuilder();
             if (!string.IsNullOrEmpty(Arrival))
@@ -62,7 +62,7 @@ namespace visvitalis.JSON
             return builder.ToString();
         }
 
-        public string ThirdLine()
+        public string GetPatientDeparture()
         {
             var builder = new StringBuilder();
             if (!string.IsNullOrEmpty(Departure))

@@ -79,7 +79,7 @@ namespace visvitalis.NotificationService
             }
 
             // stop this service..
-            StopService(new Intent(this, typeof(RegistrationIntentService)));
+            StopSelf();
         }
 
         void Subscribe(string token)

@@ -16,6 +16,7 @@ namespace visvitalis.Fragments
     {
         public ViewPager ViewPager { get; set; }
         private readonly string[] Titles = { "Morgens", "Abends", "Neu" };
+
         private readonly Dictionary<int, string> _fragmentTags;
         private readonly string _date;
         private readonly string _text;
@@ -102,6 +103,7 @@ namespace visvitalis.Fragments
         {
             if (ViewPager != null)
             {
+                //ViewPager.ClearFocus();
                 ViewPager.SetCurrentItem(position, false);
             }
         }

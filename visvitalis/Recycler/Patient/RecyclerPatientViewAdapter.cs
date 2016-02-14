@@ -34,8 +34,8 @@ namespace visvitalis.Recycler
 
             vh.TitleTextView.Text = mRecylcerItem[position].PatientTitle;
             vh.PerformancesTextView.Text = mRecylcerItem[position].LeistungAsString();
-            vh.ArrivalTextView.Text = mRecylcerItem[position].SecondLine();
-            vh.DepartureTextView.Text = mRecylcerItem[position].ThirdLine();
+            vh.ArrivalTextView.Text = mRecylcerItem[position].GetPatientArrival();
+            vh.DepartureTextView.Text = mRecylcerItem[position].GetPatientDeparture();
         }
 
         public override int ItemCount

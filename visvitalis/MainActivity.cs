@@ -103,6 +103,13 @@ namespace visvitalis
                             oldFile = true;
                         }
 
+                        if (content == "[]")
+                        {
+                            Toast.MakeText(this, "Es sind noch keine Daten auf diesem Gerät vorhanden!", ToastLength.Long).Show();
+                            _progressDialog.Dismiss();
+                            return;
+                        }
+
                         _progressDialog.Dismiss();
                         
                         var nextIntent = new Intent();

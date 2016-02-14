@@ -22,63 +22,76 @@ namespace visvitalis.Utils
 
         public async Task<string> CreateFileAsync()
         {
-            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
-            var filePath = Path.Combine(directoryPath, _date + ".json");
+            try {
+                var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
+                var filePath = Path.Combine(directoryPath, _date + ".json");
 
-            var maskFilePath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks", "mask.json");
-            var maskFileContent = "";
+                var maskFilePath = Path.Combine(FolderPath, AppConstants.DataFolder, "futuremasks", "mask.json");
+                var maskFileContent = "";
 
-            using (var reader = new StreamReader(maskFilePath))
-            {
-                maskFileContent = await reader.ReadToEndAsync();
-                reader.Close();
+                using (var reader = new StreamReader(maskFilePath))
+                {
+                    maskFileContent = await reader.ReadToEndAsync();
+                    reader.Close();
+                }
+
+                using (var fs = File.Create(filePath))
+                {
+                    var buffer = Encoding.UTF8.GetBytes(maskFileContent);
+                    await fs.WriteAsync(buffer, 0, buffer.Length);
+                    await fs.FlushAsync();
+                    fs.Close();
+                }
+
+                return maskFileContent;
             }
-
-            using (var fs = File.Create(filePath))
+            catch
             {
-                var buffer = Encoding.UTF8.GetBytes(maskFileContent);
-                await fs.WriteAsync(buffer, 0, buffer.Length);
-                await fs.FlushAsync();
-                fs.Close();
+                return "[]";
             }
-
-            return maskFileContent;
         }
 
         public async Task<string> LoadFileAsync(bool oldFile = false)
         {
-            var weekId = GetIso8601WeekOfYear(_dateTime);
-            var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
+            try {
+                var weekId = GetIso8601WeekOfYear(_dateTime);
+                var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
 
-            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
-            if (oldFile)
-                directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp", "old.data");
+                var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
+                if (oldFile)
+                    directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp", "old.data");
 
-            var filePath = Path.Combine(directoryPath, _date + ".json");
+                var filePath = Path.Combine(directoryPath, _date + ".json");
 
-            var fileContent = "";
+                var fileContent = "";
 
-            await Task.Factory.StartNew(() =>
-            {
-                if (!File.Exists(filePath))
+                await Task.Factory.StartNew(() =>
                 {
-                    fileContent = "undefined";
-                }
-            });
+                    if (!File.Exists(filePath))
+                    {
+                        fileContent = "undefined";
+                    }
+                });
 
-            if (fileContent != "undefined")
-            {
-                using (var reader = new StreamReader(filePath))
+                if (fileContent != "undefined")
                 {
-                    fileContent = await reader.ReadToEndAsync();
+                    using (var reader = new StreamReader(filePath))
+                    {
+                        fileContent = await reader.ReadToEndAsync();
+                    }
                 }
-            }
-            else
-            {
-                fileContent = "[]";
-            }
+                else
+                {
+                    fileContent = "[]";
+                }
 
-            return fileContent;
+                return fileContent;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug("e/FileManager", ex.ToString());
+                return "[]";
+            }
         }
         public string LoadFile(bool oldFile = false)
         { 
@@ -208,6 +221,12 @@ namespace visvitalis.Utils
         {
             var content = "[]";
             var newDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp", "old.data");
+
+            // fixes the crash, when loading not existing files.
+            if (!Directory.Exists(newDirectoryPath))
+            {
+                return content;
+            }
 
             foreach (var file in Directory.GetFiles(newDirectoryPath))
             {
