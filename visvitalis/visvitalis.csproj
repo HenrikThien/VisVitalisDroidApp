@@ -323,4 +323,7 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\lock.png" />
   </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\drawable\main_icon.png" />
+  </ItemGroup>
 </Project>
