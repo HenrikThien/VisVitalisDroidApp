@@ -42,7 +42,6 @@ namespace visvitalis.NotificationService
             }
             catch
             {
-                return;
             }
         }
 

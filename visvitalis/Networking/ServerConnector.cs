@@ -26,10 +26,7 @@ namespace visvitalis.Networking
         public delegate void NotifyUserDownloadCompleted();
         public event NotifyUserDownloadCompleted OnNotifyUserDownloadCompleted;
 
-        public ServerConnector()
-        {
-
-        }
+        public ServerConnector() { }
 
         #region Register device async
         public async Task<ValidMessageResponse> RegisterDeviceAsync(string groupname, string token)

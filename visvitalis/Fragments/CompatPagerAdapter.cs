@@ -89,7 +89,7 @@ namespace visvitalis.Fragments
             {
                 fragment = RecyclerPatientViewFragment.CreateNewInstance(_loadOldFile, "abends", _date, _workerToken);
             }
-            else
+            else if (position == 2)
             {
                 var frg = NewEntryFragment.CreateInstance(_date);
                 frg.OnTabNeedSwitchEvent += Frg_OnTabNeedSwitchEvent;
@@ -103,7 +103,6 @@ namespace visvitalis.Fragments
         {
             if (ViewPager != null)
             {
-                //ViewPager.ClearFocus();
                 ViewPager.SetCurrentItem(position, false);
             }
         }

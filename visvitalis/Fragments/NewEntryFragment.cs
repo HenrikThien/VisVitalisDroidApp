@@ -11,6 +11,7 @@ using visvitalis.JSON;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Threading;
+using Android.Util;
 
 namespace visvitalis.Fragments
 {
@@ -44,99 +45,107 @@ namespace visvitalis.Fragments
         public override void OnResume()
         {
             base.OnResume();
-            var button = _tabView.FindViewById<Button>(Resource.Id.button1);
 
-            var date = Arguments.GetString("JSON_DATE");
-
-            DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
-
-            if (_fileDateTime.Date != DateTime.Now.Date)
+            try
             {
-                button.Enabled = false;
-            }
+                var button = _tabView.FindViewById<Button>(Resource.Id.button1);
 
-            _fileManager = new FileManager(date, _fileDateTime);
-            var jsonMask = _fileManager.LoadFile(false);
+                var date = Arguments.GetString("JSON_DATE");
 
-            _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
+                DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
 
-            if (!button.HasOnClickListeners)
-            {
-                button.Click += async delegate
+                if (_fileDateTime.Date != DateTime.Now.Date)
                 {
                     button.Enabled = false;
+                }
 
-                    if (_tabView.FindViewById<EditText>(Resource.Id.editText1).Text.Length > 0 &&
-                        _tabView.FindViewById<EditText>(Resource.Id.editText2).Text.Length > 0 &&
-                        _tabView.FindViewById<EditText>(Resource.Id.editText3).Text.Length > 0 &&
-                        _tabView.FindViewById<EditText>(Resource.Id.editText4).Text.Length > 0)
+                _fileManager = new FileManager(date, _fileDateTime);
+                var jsonMask = _fileManager.LoadFile(false);
+
+                _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
+
+                if (!button.HasOnClickListeners)
+                {
+                    button.Click += async delegate
                     {
-                        var patientId = _tabView.FindViewById<EditText>(Resource.Id.editText1);
-                        var patientName = _tabView.FindViewById<EditText>(Resource.Id.editText2);
-                        var patientPerformances = _tabView.FindViewById<EditText>(Resource.Id.editText3);
-                        var patientMission = _tabView.FindViewById<EditText>(Resource.Id.editText4);
+                        button.Enabled = false;
 
-                        try
+                        if (_tabView.FindViewById<EditText>(Resource.Id.editText1).Text.Length > 0 &&
+                            _tabView.FindViewById<EditText>(Resource.Id.editText2).Text.Length > 0 &&
+                            _tabView.FindViewById<EditText>(Resource.Id.editText3).Text.Length > 0 &&
+                            _tabView.FindViewById<EditText>(Resource.Id.editText4).Text.Length > 0)
                         {
-                            var patient = new Patient()
-                            {
-                                Nr = int.Parse(patientId.Text),
-                                PatientName = patientName.Text,
-                                Performances = (patientPerformances.Text.Contains(',')) ? patientPerformances.Text.Split(',').ToList() : (patientPerformances.Text + ",").Split(',').ToList(),
-                                Mission = GetPatientMission(patientMission.Text)
-                            };
+                            var patientId = _tabView.FindViewById<EditText>(Resource.Id.editText1);
+                            var patientName = _tabView.FindViewById<EditText>(Resource.Id.editText2);
+                            var patientPerformances = _tabView.FindViewById<EditText>(Resource.Id.editText3);
+                            var patientMission = _tabView.FindViewById<EditText>(Resource.Id.editText4);
 
-                            var listV = _patientMask.PatientMask[0].PatientOperation.Tours[0];
-                            var listA = _patientMask.PatientMask[0].PatientOperation.Tours[1];
-
-                            if (patientMission.Text.ToLower().StartsWith("v"))
+                            try
                             {
-                                var lastPatient = listV.Patients[listV.Patients.Count - 1];
-                                patient.Order = lastPatient.Order + 1;
-                                listV.Patients.Add(patient);
+                                var patient = new Patient()
+                                {
+                                    Nr = int.Parse(patientId.Text),
+                                    PatientName = patientName.Text,
+                                    Performances = (patientPerformances.Text.Contains(',')) ? patientPerformances.Text.Split(',').ToList() : (patientPerformances.Text + ",").Split(',').ToList(),
+                                    Mission = GetPatientMission(patientMission.Text)
+                                };
+
+                                var listV = _patientMask.PatientMask[0].PatientOperation.Tours[0];
+                                var listA = _patientMask.PatientMask[0].PatientOperation.Tours[1];
+
+                                if (patientMission.Text.ToLower().StartsWith("v"))
+                                {
+                                    var lastPatient = listV.Patients[listV.Patients.Count - 1];
+                                    patient.Order = lastPatient.Order + 1;
+                                    listV.Patients.Add(patient);
+                                }
+                                else
+                                {
+                                    var lastPatient = listA.Patients[listA.Patients.Count - 1];
+                                    patient.Order = lastPatient.Order + 1;
+                                    listA.Patients.Add(patient);
+                                }
+
+                                var jsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(_patientMask));
+
+                                if (!await _fileManager.SaveJsonContentAsync(jsonContent))
+                                {
+                                    Toast.MakeText(Activity, "Fehler beim Speichern der Datei...", ToastLength.Short).Show();
+                                }
+                                else
+                                {
+                                    Toast.MakeText(Activity, "Der Einsatz wurde erfolgreich erstellt.", ToastLength.Short).Show();
+
+                                    patientId.Text = "";
+                                    patientName.Text = "";
+                                    patientPerformances.Text = "";
+                                    var tempMission = patientMission.Text;
+                                    patientMission.Text = "";
+
+                                    // trololo
+                                    await Task.Factory.StartNew(() => Thread.Sleep(400));
+
+                                    button.Enabled = true;
+                                    UpdateUserView((tempMission.ToLower().StartsWith("v")) ? 0 : 1);
+                                }
                             }
-                            else
+                            catch
                             {
-                                var lastPatient = listA.Patients[listA.Patients.Count - 1];
-                                patient.Order = lastPatient.Order + 1;
-                                listA.Patients.Add(patient);
-                            }
-
-                            var jsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(_patientMask));
-
-                            if (!await _fileManager.SaveJsonContentAsync(jsonContent))
-                            {
-                                Toast.MakeText(Activity, "Fehler beim Speichern der Datei...", ToastLength.Short).Show();
-                            }
-                            else
-                            {
-                                Toast.MakeText(Activity, "Der Einsatz wurde erfolgreich erstellt.", ToastLength.Short).Show();
-
-                                patientId.Text = "";
-                                patientName.Text = "";
-                                patientPerformances.Text = "";
-                                var tempMission = patientMission.Text;
-                                patientMission.Text = "";
-
-                                // trololo
-                                await Task.Factory.StartNew(() => Thread.Sleep(400));
-
-                                button.Enabled = true;
-                                UpdateUserView((tempMission.ToLower().StartsWith("v")) ? 0 : 1);
+                                CreateAlert("Fehler", "Fehler beim Erstellen des Einsatzes.\nBitte erneut versuchen!");
+                                return;
                             }
                         }
-                        catch
+                        else
                         {
-                            CreateAlert("Fehler", "Fehler beim Erstellen des Einsatzes.\nBitte erneut versuchen!");
+                            CreateAlert("Fehler", "Die Felder müssen korrekt ausgefüllt werden.");
                             return;
                         }
-                    }
-                    else
-                    {
-                        CreateAlert("Fehler", "Die Felder müssen korrekt ausgefüllt werden.");
-                        return;
-                    }
-                };
+                    };
+                }
+            }
+            catch
+            {
+                Log.Debug("debug", "lol...");
             }
         }
 

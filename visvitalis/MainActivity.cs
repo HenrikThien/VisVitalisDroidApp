@@ -210,7 +210,7 @@ namespace visvitalis
         }
         private async Task<Intent> Logout()
         {
-            Intent activity = new Intent(this, typeof(SplashScreen));
+            var activity = new Intent(this, typeof(SplashScreen));
             activity.SetFlags(ActivityFlags.NoHistory | ActivityFlags.ClearTask);
 
             StaticHolder.SessionHolder = null;

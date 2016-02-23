@@ -17,6 +17,7 @@ using Java.Lang;
 using System.Net;
 using Android.Content;
 using System.IO;
+using visvitalis.NotificationService;
 
 namespace visvitalis
 {
@@ -68,8 +69,9 @@ namespace visvitalis
                 preference.OnPreferenceClickListener = this;
             }
 
-            var button = new Button(this);
-            button.Text = "Updates installieren.";
+            var installUpdateBtn = new Button(this);
+            installUpdateBtn.Text = "Updates installieren.";
+            installUpdateBtn.Enabled = false;
 
             var downloadFolder = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads).ToString();
             var downloadUpdateFolder = Path.Combine(downloadFolder, "vv-updates");
@@ -77,14 +79,24 @@ namespace visvitalis
 
             if (!File.Exists(downloadPath))
             {
-                button.Enabled = false;
-                button.Text = "Updates installieren";
+                installUpdateBtn.Enabled = false;
+                installUpdateBtn.Text = "Es sind keine neuen Updates verfügbar.";
+            }
+            else if (File.Exists(downloadPath) && !IsNewerVersion(pInfo.VersionCode, pInfo.VersionName, downloadPath))
+            {
+                installUpdateBtn.Enabled = false;
+                installUpdateBtn.Text = "Es sind keine neuen Updates verfügbar.";
+            }
+            else
+            {
+                installUpdateBtn.Enabled = true;
+                installUpdateBtn.Text = "Die neuen Updates jetzt installieren";
             }
 
-            button.Click += delegate
+            installUpdateBtn.Click += delegate
             {
-                button.Enabled = false;
-                button.Text = "Bitte warten...";
+                installUpdateBtn.Enabled = false;
+                installUpdateBtn.Text = "Bitte warten...";
 
                 var intent = new Intent(Intent.ActionView);
                 intent.SetDataAndType(Android.Net.Uri.FromFile(new Java.IO.File(downloadPath)), "application/vnd.android.package-archive");
@@ -93,8 +105,75 @@ namespace visvitalis
                 StartActivity(intent);
             };
 
+
+            var searchUpdateBtn = new Button(this);
+            searchUpdateBtn.Text = "Nach neuen Updates suchen.";
+            searchUpdateBtn.Enabled = !(installUpdateBtn.Enabled); // wenn kein aktuelles update vorhanden ist, ist suchen erlaubt.
+
+            searchUpdateBtn.Click += async delegate
+            {
+                ChangeButton(false, "Nach Updates suchen, bitte warten...", searchUpdateBtn);
+
+                using (var connector = new ServerConnector())
+                {
+                    if (await connector.IsNetworkAvailable(this))
+                    {
+                        if (await connector.IsServerAvailableAsync())
+                        {
+                            var response = await connector.CheckForUpdates(this, StaticHolder.SessionHolder, pInfo.VersionCode);
+
+                            try
+                            {
+                                var msg = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
+
+                                if (msg.Valid && msg.NewestVersion > pInfo.VersionCode)
+                                {
+                                    SendBroadcast(new Intent(this, typeof(UpdateReceiver)));
+                                    Toast.MakeText(this, "Updates werden nun heruntergeladen!", ToastLength.Long).Show();
+                                    ChangeButton(false, "Nach neuen Updates suchen.", searchUpdateBtn);
+                                }
+                                else
+                                {
+                                    Toast.MakeText(this, "Zurzeit stehen keine neuen Updates zur Verfügung.", ToastLength.Long).Show();
+                                    ChangeButton(false, "Nach neuen Updates suchen.", searchUpdateBtn);
+                                }
+                            }
+                            catch
+                            {
+                                Toast.MakeText(this, "Zurzeit stehen keine neuen Updates zur Verfügung.", ToastLength.Long).Show();
+                                ChangeButton(false, "Nach neuen Updates suchen.", searchUpdateBtn);
+                            }
+                        }
+                        else
+                        {
+                            Toast.MakeText(this, "Der Server ist derzeit nicht erreichbar.", ToastLength.Long).Show();
+                            ChangeButton(true, "Nach neuen Updates suchen.", searchUpdateBtn);
+                        }
+                    }
+                    else
+                    {
+                        Toast.MakeText(this, "Es muss eine Internetverbindung vorhanden sein.", ToastLength.Long).Show();
+                        ChangeButton(true, "Nach neuen Updates suchen.", searchUpdateBtn);
+                    }
+                }
+            };
+
+
             ListView.SetHeaderDividersEnabled(true);
-            ListView.AddHeaderView(button);
+            ListView.AddHeaderView(installUpdateBtn);
+            ListView.AddHeaderView(searchUpdateBtn);
+        }
+
+        private void ChangeButton(bool enable, string text, Button button)
+        {
+            button.Enabled = enable;
+            button.Text = text;
+        }
+
+        private bool IsNewerVersion(int cVersion, string cName, string path)
+        {
+            PackageInfo info = PackageManager.GetPackageArchiveInfo(path, 0);
+            return (info.VersionCode > cVersion && info.VersionName != cName);
         }
 
         protected override void OnPostCreate(Bundle savedInstanceState)

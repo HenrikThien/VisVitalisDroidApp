@@ -120,7 +120,6 @@ namespace visvitalis.NotificationService
         private void Webclient_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
             mBuilder.SetProgress(100, e.ProgressPercentage, false);
-            mBuilder.SetAutoCancel(true);
             mBuilder.SetContentText("Status: " + FormatBytes(e.BytesReceived) + "/" + FormatBytes(e.TotalBytesToReceive));
             mNotifyManager.Notify(id, mBuilder.Build());
         }

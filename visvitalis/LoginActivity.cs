@@ -17,7 +17,7 @@ using Toolbar = Android.Support.V7.Widget.Toolbar;
 
 namespace visvitalis
 {
-    [Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", NoHistory = true)]
+    [Activity(Label="Mitarbeiter Login", Icon = "@drawable/ic_launcher", Theme = "@style/MyTheme", NoHistory = true, ScreenOrientation = Android.Content.PM.ScreenOrientation.Portrait)]
     public class LoginActivity : AppCompatActivity
     {
         private ProgressDialog _progressDialog;
