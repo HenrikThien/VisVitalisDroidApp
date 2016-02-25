@@ -158,56 +158,78 @@ namespace visvitalis.Utils
             return success;
         }
 
-        public async Task MoveOldFilesAsync(string year)
+        public async Task<bool> SaveJsonContentForFileAsync(string file, string content)
         {
-            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp");
-            var newDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp", "old.data");
+            var success = false;
 
-            var tempList = new List<string>();
-            await Task.Factory.StartNew(() =>
+            if (await Task.Factory.StartNew(() => File.Exists(file)))
             {
-                foreach (var file in Directory.GetFiles(directoryPath))
+                using (var writer = new StreamWriter(file))
                 {
-                    tempList.Add(file);
+                    await writer.WriteAsync(content);
+                    success = true;
+                    await writer.FlushAsync();
+                    writer.Close();
                 }
-            });
+            }
 
-            await Task.Factory.StartNew(() =>
-            {
-                foreach (var file in tempList)
-                {
-                    var fileName = Path.GetFileName(file);
-                    if (File.Exists(Path.Combine(newDirectoryPath, fileName)))
-                    {
-                        File.Delete(Path.Combine(newDirectoryPath, fileName));
-                    }
-                    File.Move(file, Path.Combine(newDirectoryPath, fileName));
-                }
-            });
-
-            tempList.Clear();
+            return success;
         }
 
-        public async Task<List<string>> GetFileContentFromTempAsync(string year)
+        public async Task MoveOldFilesAsync(string year, List<string> filesToMove)
         {
-            var resultList = new List<string>();
             var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp");
             var newDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp", "old.data");
 
-            var tempList = new List<string>();
+            await Task.Factory.StartNew(() =>
+            {
+                if (!Directory.Exists(newDirectoryPath))
+                {
+                    Directory.CreateDirectory(newDirectoryPath);
+                }
+            });
+
+            await Task.Factory.StartNew(() =>
+            {
+                foreach (var file in filesToMove)
+                {
+                    var fileName = Path.GetFileName(file);
+
+                    if (File.Exists(file))
+                    {
+                        if (File.Exists(Path.Combine(newDirectoryPath, fileName)))
+                        {
+                            File.Delete(Path.Combine(newDirectoryPath, fileName));
+                        }
+
+                        File.Move(file, Path.Combine(newDirectoryPath, fileName));
+                    }
+                }
+            });
+
+            filesToMove.Clear();
+        }
+
+        public async Task<Dictionary<string, string>> GetFileContentFromTempAsync(string year)
+        {
+            var resultList = new Dictionary<string, string>();
+            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp");
+            var newDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, year, "temp", "old.data");
+
+            var tempList = new Dictionary<string, string>();
             await Task.Factory.StartNew(() =>
             {
                 foreach (var file in Directory.GetFiles(directoryPath))
                 {
-                    tempList.Add(file);
+                    tempList.Add(file, file);
                 }
             });
 
             foreach (var file in tempList)
             {
-                using (var streamReader = new StreamReader(file))
+                using (var streamReader = new StreamReader(file.Key))
                 {
-                    resultList.Add(await streamReader.ReadToEndAsync());
+                    resultList.Add(file.Key, await streamReader.ReadToEndAsync());
                     streamReader.Close();
                 }
             }

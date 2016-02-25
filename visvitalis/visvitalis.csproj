@@ -115,6 +115,8 @@
     <Compile Include="Fragments\ChatMessage.cs" />
     <Compile Include="Fragments\CompatPagerAdapter.cs" />
     <Compile Include="Fragments\NewEntryFragment.cs" />
+    <Compile Include="JSON\FinishedPatient.cs" />
+    <Compile Include="JSON\FinishedPatientMask.cs" />
     <Compile Include="JSON\Patient.cs" />
     <Compile Include="JSON\PatientMask.cs" />
     <Compile Include="JSON\PatientOperation.cs" />

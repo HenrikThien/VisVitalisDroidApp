@@ -58,7 +58,7 @@ namespace visvitalis.NotificationService
 
                             if (loginResponse != null && (loginResponse != null && loginResponse.Valid))
                             {
-                                var accessTokenResponse = await client.RequestAsyncTokenAsync(loginResponse);
+                                var accessTokenResponse = await client.RequestAccessTokenAsync(loginResponse);
                                 sessionObj.LoginResponse = loginResponse;
 
                                 if (accessTokenResponse != null)

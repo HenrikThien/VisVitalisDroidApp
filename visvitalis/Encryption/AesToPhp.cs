@@ -1,14 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-using Android.App;
-using Android.Content;
-using Android.OS;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
 using System.Security.Cryptography;
 using System.IO;
 
@@ -16,6 +6,7 @@ namespace visvitalis.Encryption
 {
     public class AesToPhp
     {
+        // key and iv to decrypt and encrypt data
         private byte[] Key;
         private byte[] IV;
 
@@ -106,17 +97,14 @@ namespace visvitalis.Encryption
 
                 ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-                MemoryStream msEncrypt = new MemoryStream();
-                CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
-                StreamWriter swEncrypt = new StreamWriter(csEncrypt);
-
-                swEncrypt.Write(plainText);
-
-                swEncrypt.Close();
-                csEncrypt.Close();
-                aes.Clear();
-
-                return msEncrypt.ToArray();
+                using (MemoryStream msEncrypt = new MemoryStream())
+                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                {
+                    swEncrypt.Write(plainText);
+                    aes.Clear();
+                    return msEncrypt.ToArray();
+                }
             }
             catch (Exception ex)
             {
@@ -150,18 +138,14 @@ namespace visvitalis.Encryption
 
                 ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
-                MemoryStream msDecrypt = new MemoryStream(cipherText);
-                CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
-                StreamReader srDecrypt = new StreamReader(csDecrypt);
-
-                string plaintext = srDecrypt.ReadToEnd();
-
-                srDecrypt.Close();
-                csDecrypt.Close();
-                msDecrypt.Close();
-                aes.Clear();
-
-                return plaintext;
+                using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                {
+                    string plaintext = srDecrypt.ReadToEnd();
+                    aes.Clear();
+                    return plaintext;
+                }
             }
             catch (Exception ex)
             {

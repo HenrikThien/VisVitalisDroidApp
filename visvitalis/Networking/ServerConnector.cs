@@ -1,23 +1,17 @@
 using System;
-using System.Collections.Specialized;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Android.Content;
 using Java.Net;
 using visvitalis.Utils;
-using Android.Net.Wifi;
 using Android.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using visvitalis.Networking.Responses;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using Android.Util;
 using Android.Preferences;
-using Org.Apache.Http.Util;
 using System.IO;
-using Java.IO;
 
 namespace visvitalis.Networking
 {
@@ -88,7 +82,7 @@ namespace visvitalis.Networking
         #endregion
 
         #region Request access_token async
-        public async Task<AccessTokenResponse> RequestAsyncTokenAsync(LoginResponse loginresponse)
+        public async Task<AccessTokenResponse> RequestAccessTokenAsync(LoginResponse loginresponse)
         {
             try
             {
@@ -373,7 +367,7 @@ namespace visvitalis.Networking
         #endregion
 
         #region Upload data to server async
-        public async Task<string> UploadDataAsync(Context context, Session session, string jsonContent)
+        public async Task<string> UploadDataAsync(Context context, Session session, string jsonContent, string uri = "uploadfinishedmask")
         {
             try
             {
@@ -384,7 +378,7 @@ namespace visvitalis.Networking
                     var data = new Dictionary<string, string>();
                     data["data"] = jsonContent;
 
-                    var httpResponse = await client.PostAsync("/API/uploadfinishedmask", new FormUrlEncodedContent(data));
+                    var httpResponse = await client.PostAsync("/API/" + uri, new FormUrlEncodedContent(data));
 
                     if (httpResponse.IsSuccessStatusCode)
                     {

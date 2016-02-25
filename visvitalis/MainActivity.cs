@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using visvitalis.JSON;
 using visvitalis.Networking;
 using System.IO;
+using System.Collections.Generic;
 
 namespace visvitalis
 {
@@ -219,7 +220,7 @@ namespace visvitalis
             return activity;
         }
 
-        public async void UploadDataAsync()
+        public async void UploadDataAsyncNew()
         {
             _progressDialog = new ProgressDialog(this);
             _progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
@@ -243,23 +244,86 @@ namespace visvitalis
                         return;
                     }
 
-                    var rootObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(listContent[0]));
-                    listContent.RemoveAt(0);
+                    var patients = new FinishedPatientMask() { Patients = new List<FinishedPatient>() };
 
-                    var startDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
-                    var endDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
+                    // files which needs to be updated (string-path, string-content)
+                    var filesToUpdate = new Dictionary<string, string>();
+                    // files which need to be moved to old.files directory
+                    var filesToMove = new List<string>();
 
+                    // loop through all files in temp folder
                     foreach (var content in listContent)
                     {
-                        var deserializedContent = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
-                        rootObj.PatientMask.AddRange(deserializedContent.PatientMask);
-                        endDatum = deserializedContent.PatientMask[0].PatientOperation.MaskDate;
+                        // patient counter
+                        var patientCounter = 0;
+
+                        // list of patients which are already sended
+                        var listOfSended = new Dictionary<Patient, bool>();
+
+                        // deserialize the mask
+                        var mask = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content.Value));
+
+                        // loop through the whole file.
+                        foreach (var operation in mask.PatientMask)
+                        {
+                            foreach (var tour in operation.PatientOperation.Tours)
+                            {
+                                foreach (var patient in tour.Patients)
+                                {
+                                    // count the patients
+                                    patientCounter++;
+                                    
+                                    // checks if the patient needs to be uploaded
+                                    if (!string.IsNullOrEmpty(patient.Arrival) &&
+                                        !string.IsNullOrEmpty(patient.WorkerToken) &&
+                                        patient.ServerState != "sended")
+                                    {
+                                        // set state to "sended"
+                                        patient.ServerState = "sended";
+
+                                        // add to sended list
+                                        if (!listOfSended.ContainsKey(patient))
+                                        {
+                                            listOfSended.Add(patient, true);
+                                        }
+
+                                        // add to export list
+                                        patients.Patients.Add(new FinishedPatient()
+                                        {
+                                            Date = mask.PatientMask[0].PatientOperation.MaskDate,
+                                            Patient = patient,
+                                            Groupname = (string.IsNullOrEmpty(mask.Groupname)) ? "Keine Gruppe" : mask.Groupname
+                                        });
+                                    }
+                                    else if (patient.ServerState == "sended")
+                                    {
+                                        // add to sended list
+                                        if (!listOfSended.ContainsKey(patient))
+                                        {
+                                            listOfSended.Add(patient, true);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // if listOfSended is the same as patientCounter, add file to files which needs to be moved
+                        if (listOfSended.Count == patientCounter)
+                        {
+                            filesToMove.Add(content.Key);
+                        }
+
+                        // save "sended" states in file
+                        var stateContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(mask));
+
+                        if (!filesToUpdate.ContainsKey(content.Key))
+                        {
+                            filesToUpdate.Add(content.Key, stateContent);
+                        }
                     }
 
-                    rootObj.DatumStart = startDatum;
-                    rootObj.DatumEnd = endDatum;
-
-                    var newContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
+                    // json content to upload
+                    var uploadContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(patients));
 
                     using (var client = new ServerConnector())
                     {
@@ -269,11 +333,21 @@ namespace visvitalis
                             {
                                 try
                                 {
-                                    var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newContent);
+                                    var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, uploadContent, "uploadfinishedmasknew");
+
                                     var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
                                     Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
 
-                                    await fileManager.MoveOldFilesAsync(DateTime.Now.Year.ToString());
+                                    // update status
+                                    foreach (var file in filesToUpdate)
+                                    {
+                                        await fileManager.SaveJsonContentForFileAsync(file.Key, file.Value);
+                                    }
+
+                                    // move files to old.data directory
+                                    await fileManager.MoveOldFilesAsync(DateTime.Now.Year.ToString(), filesToMove);
+
+                                    // start the service to download the favorite mask
                                     StartService(new Intent(this, typeof(DownloadService)));
                                 }
                                 catch
@@ -301,7 +375,7 @@ namespace visvitalis
             }
             catch (Exception ex)
             {
-                Log.Debug("exception", ex.ToString());
+                Log.Debug("d/exception", ex.ToString());
                 _progressDialog.Dismiss();
                 _progressDialog = null;
             }
@@ -310,13 +384,104 @@ namespace visvitalis
             _progressDialog = null;
         }
 
+        public async void UploadDataAsync()
+        {
+            //_progressDialog = new ProgressDialog(this);
+            //_progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
+            //_progressDialog.SetCancelable(false);
+            //_progressDialog.SetTitle("Hochladen...");
+            //_progressDialog.SetMessage("Daten werden hochgeladen, bitte warten...");
+            //_progressDialog.SetCanceledOnTouchOutside(false);
+            //_progressDialog.Show();
+
+            //try
+            //{
+            //    using (var fileManager = new FileManager("", DateTime.Now))
+            //    {
+            //        var listContent = await fileManager.GetFileContentFromTempAsync(DateTime.Now.Year.ToString());
+
+            //        if (listContent.Count == 0)
+            //        {
+            //            _progressDialog.Dismiss();
+            //            _progressDialog = null;
+            //            CreateAlert("Fehler", "Es wurden keine Dateien zum Hochladen gefunden!");
+            //            return;
+            //        }
+
+            //        var rootObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(listContent[0]));
+            //        listContent.RemoveAt(0);
+
+            //        var startDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
+            //        var endDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
+
+            //        foreach (var content in listContent)
+            //        {
+            //            var deserializedContent = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
+            //            rootObj.PatientMask.AddRange(deserializedContent.PatientMask);
+            //            endDatum = deserializedContent.PatientMask[0].PatientOperation.MaskDate;
+            //        }
+
+            //        rootObj.DatumStart = startDatum;
+            //        rootObj.DatumEnd = endDatum;
+
+            //        var newContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
+
+            //        using (var client = new ServerConnector())
+            //        {
+            //            if (await client.IsNetworkAvailable(this))
+            //            {
+            //                if (await client.IsServerAvailableAsync())
+            //                {
+            //                    try
+            //                    {
+            //                        var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newContent);
+            //                        var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
+            //                        Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
+
+            //                        await fileManager.MoveOldFilesAsync(DateTime.Now.Year.ToString());
+            //                        StartService(new Intent(this, typeof(DownloadService)));
+            //                    }
+            //                    catch
+            //                    {
+            //                        CreateAlert("Fehler", "Fehler beim Hochladen der Daten.");
+            //                        _progressDialog.Dismiss();
+            //                        _progressDialog = null;
+            //                    }
+            //                }
+            //                else
+            //                {
+            //                    CreateAlert("Datenserver", "Der Server scheint derzeit nicht erreichbar zu sein. Versuchen Sie es später erneut.");
+            //                    _progressDialog.Dismiss();
+            //                    _progressDialog = null;
+            //                }
+            //            }
+            //            else
+            //            {
+            //                CreateAlert("Internetverbindung", "Es ist keine Internetverbindung verfügbar.");
+            //                _progressDialog.Dismiss();
+            //                _progressDialog = null;
+            //            }
+            //        }
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Log.Debug("exception", ex.ToString());
+            //    _progressDialog.Dismiss();
+            //    _progressDialog = null;
+            //}
+
+            //_progressDialog.Dismiss();
+            //_progressDialog = null;
+        }
+
         void AskToUpload()
         {
             var alert = new Android.App.AlertDialog.Builder(this);
             alert.SetTitle("Daten zum Server senden?");
             alert.SetMessage("Sind Sie sicher, dass die Daten zum Server geschickt werden sollen?\nWurden alle Daten ausgefüllt?");
             alert.SetNegativeButton("Abbrechen", (sender, args) => { alert.Dispose(); });
-            alert.SetPositiveButton("Absenden", (sender, args) => { UploadDataAsync(); });
+            alert.SetPositiveButton("Absenden", (sender, args) => { UploadDataAsyncNew(); });
             alert.Show();
         }
     }

@@ -145,7 +145,7 @@ namespace visvitalis.Fragments
             }
             catch
             {
-                Log.Debug("debug", "lol...");
+                //Log.Debug("debug", "lol...");
             }
         }
 

@@ -76,7 +76,7 @@ namespace visvitalis
                             {
                                 if (loginResponse.Valid)
                                 {
-                                    var accessTokenResponse = await connector.RequestAsyncTokenAsync(loginResponse);
+                                    var accessTokenResponse = await connector.RequestAccessTokenAsync(loginResponse);
 
                                     var intent = new Intent(this, typeof(RegistrationIntentService));
                                     StartService(intent);
