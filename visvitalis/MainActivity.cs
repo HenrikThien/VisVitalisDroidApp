@@ -83,20 +83,11 @@ namespace visvitalis
 
                         if (content == "[]")
                         {
-                            if (result.Date == DateTime.Now.Date)
-                            {
-                                content = await fileManager.LoadFileAsync();
+                            content = await fileManager.LoadFileAsync();
 
-                                if (content == "[]")
-                                {
-                                    content = await fileManager.CreateFileAsync();
-                                }
-                            }
-                            else
+                            if (content == "[]" && result.Date == DateTime.Now.Date)
                             {
-                                Toast.MakeText(this, "Es existiert keine Datei für das Datum.", ToastLength.Short).Show();
-                                _progressDialog.Dismiss();
-                                return;
+                                content = await fileManager.CreateFileAsync();
                             }
                         }
                         else
@@ -106,7 +97,7 @@ namespace visvitalis
 
                         if (content == "[]")
                         {
-                            Toast.MakeText(this, "Es sind noch keine Daten auf diesem Gerät vorhanden!", ToastLength.Long).Show();
+                            Toast.MakeText(this, "Die Datei konnte nicht gefunden werden!", ToastLength.Long).Show();
                             _progressDialog.Dismiss();
                             return;
                         }
@@ -275,6 +266,7 @@ namespace visvitalis
                                     
                                     // checks if the patient needs to be uploaded
                                     if (!string.IsNullOrEmpty(patient.Arrival) &&
+                                        !string.IsNullOrEmpty(patient.Departure) &&
                                         !string.IsNullOrEmpty(patient.WorkerToken) &&
                                         patient.ServerState != "sended")
                                     {
@@ -322,6 +314,15 @@ namespace visvitalis
                         }
                     }
 
+
+                    if (patients.Patients.Count == 0)
+                    {
+                        _progressDialog.Dismiss();
+                        _progressDialog = null;
+                        CreateAlert("Fehler", "Es wurden keine Dateien zum Hochladen gefunden!");
+                        return;
+                    }
+
                     // json content to upload
                     var uploadContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(patients));
 
@@ -338,10 +339,14 @@ namespace visvitalis
                                     var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
                                     Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
 
-                                    // update status
-                                    foreach (var file in filesToUpdate)
+                                    // update status if upload = 200 OK
+                                    if (newResponse.Valid)
                                     {
-                                        await fileManager.SaveJsonContentForFileAsync(file.Key, file.Value);
+                                        // save state of files
+                                        foreach (var file in filesToUpdate)
+                                        {
+                                            await fileManager.SaveJsonContentForFileAsync(file.Key, file.Value);
+                                        }
                                     }
 
                                     // move files to old.data directory
@@ -373,106 +378,14 @@ namespace visvitalis
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Log.Debug("d/exception", ex.ToString());
                 _progressDialog.Dismiss();
                 _progressDialog = null;
             }
 
             _progressDialog.Dismiss();
             _progressDialog = null;
-        }
-
-        public async void UploadDataAsync()
-        {
-            //_progressDialog = new ProgressDialog(this);
-            //_progressDialog.SetProgressStyle(ProgressDialogStyle.Spinner);
-            //_progressDialog.SetCancelable(false);
-            //_progressDialog.SetTitle("Hochladen...");
-            //_progressDialog.SetMessage("Daten werden hochgeladen, bitte warten...");
-            //_progressDialog.SetCanceledOnTouchOutside(false);
-            //_progressDialog.Show();
-
-            //try
-            //{
-            //    using (var fileManager = new FileManager("", DateTime.Now))
-            //    {
-            //        var listContent = await fileManager.GetFileContentFromTempAsync(DateTime.Now.Year.ToString());
-
-            //        if (listContent.Count == 0)
-            //        {
-            //            _progressDialog.Dismiss();
-            //            _progressDialog = null;
-            //            CreateAlert("Fehler", "Es wurden keine Dateien zum Hochladen gefunden!");
-            //            return;
-            //        }
-
-            //        var rootObj = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(listContent[0]));
-            //        listContent.RemoveAt(0);
-
-            //        var startDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
-            //        var endDatum = rootObj.PatientMask[0].PatientOperation.MaskDate;
-
-            //        foreach (var content in listContent)
-            //        {
-            //            var deserializedContent = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<RootObject>(content));
-            //            rootObj.PatientMask.AddRange(deserializedContent.PatientMask);
-            //            endDatum = deserializedContent.PatientMask[0].PatientOperation.MaskDate;
-            //        }
-
-            //        rootObj.DatumStart = startDatum;
-            //        rootObj.DatumEnd = endDatum;
-
-            //        var newContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(rootObj));
-
-            //        using (var client = new ServerConnector())
-            //        {
-            //            if (await client.IsNetworkAvailable(this))
-            //            {
-            //                if (await client.IsServerAvailableAsync())
-            //                {
-            //                    try
-            //                    {
-            //                        var response = await client.UploadDataAsync(this, StaticHolder.SessionHolder, newContent);
-            //                        var newResponse = await Task.Factory.StartNew(() => JsonConvert.DeserializeObject<ResponseMessage>(response));
-            //                        Toast.MakeText(this, newResponse.Message, ToastLength.Long).Show();
-
-            //                        await fileManager.MoveOldFilesAsync(DateTime.Now.Year.ToString());
-            //                        StartService(new Intent(this, typeof(DownloadService)));
-            //                    }
-            //                    catch
-            //                    {
-            //                        CreateAlert("Fehler", "Fehler beim Hochladen der Daten.");
-            //                        _progressDialog.Dismiss();
-            //                        _progressDialog = null;
-            //                    }
-            //                }
-            //                else
-            //                {
-            //                    CreateAlert("Datenserver", "Der Server scheint derzeit nicht erreichbar zu sein. Versuchen Sie es später erneut.");
-            //                    _progressDialog.Dismiss();
-            //                    _progressDialog = null;
-            //                }
-            //            }
-            //            else
-            //            {
-            //                CreateAlert("Internetverbindung", "Es ist keine Internetverbindung verfügbar.");
-            //                _progressDialog.Dismiss();
-            //                _progressDialog = null;
-            //            }
-            //        }
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Log.Debug("exception", ex.ToString());
-            //    _progressDialog.Dismiss();
-            //    _progressDialog = null;
-            //}
-
-            //_progressDialog.Dismiss();
-            //_progressDialog = null;
         }
 
         void AskToUpload()

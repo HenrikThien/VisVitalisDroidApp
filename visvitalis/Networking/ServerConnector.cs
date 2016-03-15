@@ -185,21 +185,26 @@ namespace visvitalis.Networking
             {
                 using (var client = new HttpClient())
                 {
+                    // set base adress
                     client.BaseAddress = new System.Uri("http://" + AppConstants.ServerIP);
 
+                    // set upload data
                     var content = new FormUrlEncodedContent(new[]
                     {
                         new KeyValuePair<string, string>("access_token", session.AccessTokenResponse.AccessToken),
                         new KeyValuePair<string, string>("groupname", groupname)
                     });
 
+                    // post data async to server, wait for response
                     var httpResponse = await client.PostAsync("/API/downloadfavomask", content);
 
+                    // 200 OK
                     if (httpResponse.IsSuccessStatusCode)
                     {
                         var response = await httpResponse.Content.ReadAsStringAsync();
                         return response;
                     }
+                    // 401, need new login / access_token / refresh_token
                     else if (httpResponse.StatusCode == HttpStatusCode.Unauthorized)
                     {
                         var newAccessTokenResponse = await RefreshToken(session);

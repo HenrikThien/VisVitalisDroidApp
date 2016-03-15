@@ -53,7 +53,8 @@ namespace visvitalis.Utils
 
         public async Task<string> LoadFileAsync(bool oldFile = false)
         {
-            try {
+            try
+            {
                 var weekId = GetIso8601WeekOfYear(_dateTime);
                 var newWeekId = (weekId < 10) ? "0" + weekId.ToString() : weekId.ToString();
 
@@ -93,6 +94,26 @@ namespace visvitalis.Utils
                 return "[]";
             }
         }
+
+        public bool MoveFileBack()
+        {
+            var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");
+            var oldDirectoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp", "old.data");
+
+            var filePath = Path.Combine(oldDirectoryPath, _date + ".json");
+            var newFilePath = Path.Combine(directoryPath, _date + ".json");
+
+            if (File.Exists(filePath))
+            {
+                File.Move(filePath, newFilePath);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public string LoadFile(bool oldFile = false)
         { 
             var directoryPath = Path.Combine(FolderPath, AppConstants.DataFolder, _dateTime.Year.ToString(), "temp");

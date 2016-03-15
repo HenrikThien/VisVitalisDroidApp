@@ -81,7 +81,6 @@ namespace visvitalis
 
             ChatEncryption crypto = new ChatEncryption();
             string themessage = await crypto.SendMessage(message);
-            Console.WriteLine("THE MESSAGE LOL: " + themessage);
 
             messageET.Text = "";
             DisplayMessage(msg);

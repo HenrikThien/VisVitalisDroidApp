@@ -23,7 +23,7 @@ namespace visvitalis.Fragments
         private readonly Android.Support.V4.App.FragmentManager _fragmentManager;
         private readonly Context _appContext;
         private readonly string _workerToken;
-        private readonly bool _loadOldFile;
+        private bool _loadOldFile;
 
         public CompatPagerAdapter(Context appContext, bool loadOldFile, string workerToken, string text, string date, Android.Support.V4.App.FragmentManager fgManager) : base(fgManager)
         {
@@ -91,7 +91,7 @@ namespace visvitalis.Fragments
             }
             else if (position == 2)
             {
-                var frg = NewEntryFragment.CreateInstance(_date);
+                var frg = NewEntryFragment.CreateInstance(_date, _loadOldFile);
                 frg.OnTabNeedSwitchEvent += Frg_OnTabNeedSwitchEvent;
                 return frg;
             }
@@ -99,10 +99,21 @@ namespace visvitalis.Fragments
             return fragment;
         }
 
-        private void Frg_OnTabNeedSwitchEvent(int position)
+        public override int GetItemPosition(Java.Lang.Object objectValue)
         {
+            //if(object instanceof FirstPageFragment && mFragmentAtPos0 instanceof NextFragment)
+            //return POSITION_NONE;
+            //return POSITION_UNCHANGED;
+            return PositionNone;
+        }
+
+        private void Frg_OnTabNeedSwitchEvent(int position, bool loadOldFile)
+        {
+            _loadOldFile = loadOldFile;
+
             if (ViewPager != null)
             {
+                NotifyDataSetChanged();
                 ViewPager.SetCurrentItem(position, false);
             }
         }

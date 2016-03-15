@@ -106,7 +106,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChatActivity.cs" />
-    <Compile Include="CreateNewEntryActivity.cs" />
     <Compile Include="Encryption\AesToPhp.cs" />
     <Compile Include="Encryption\ChatEncryption.cs" />
     <Compile Include="Encryption\EncryptionUtility.cs" />

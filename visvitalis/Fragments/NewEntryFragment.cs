@@ -17,7 +17,7 @@ namespace visvitalis.Fragments
 {
     public class NewEntryFragment : Android.Support.V4.App.Fragment
     {
-        public delegate void TabNeedSwitch(int position);
+        public delegate void TabNeedSwitch(int position, bool loadOldFile);
         public event TabNeedSwitch OnTabNeedSwitchEvent;
 
         private FileManager _fileManager;
@@ -25,11 +25,12 @@ namespace visvitalis.Fragments
         private DateTime _fileDateTime;
         private View _tabView;
 
-        public static NewEntryFragment CreateInstance(string date)
+        public static NewEntryFragment CreateInstance(string date, bool oldFile)
         {
             var fragment = new NewEntryFragment();
             var bundle = new Bundle();
             bundle.PutString("JSON_DATE", date);
+            bundle.PutBoolean("JSON_OLD_FILE", oldFile);
             fragment.Arguments = bundle;
 
             return fragment;
@@ -51,6 +52,7 @@ namespace visvitalis.Fragments
                 var button = _tabView.FindViewById<Button>(Resource.Id.button1);
 
                 var date = Arguments.GetString("JSON_DATE");
+                var loadOldFile = Arguments.GetBoolean("JSON_OLD_FILE");
 
                 DateTime.TryParseExact(date, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out _fileDateTime);
 
@@ -60,7 +62,7 @@ namespace visvitalis.Fragments
                 }
 
                 _fileManager = new FileManager(date, _fileDateTime);
-                var jsonMask = _fileManager.LoadFile(false);
+                var jsonMask = _fileManager.LoadFile(loadOldFile);
 
                 _patientMask = JsonConvert.DeserializeObject<RootObject>(jsonMask);
 
@@ -69,6 +71,12 @@ namespace visvitalis.Fragments
                     button.Click += async delegate
                     {
                         button.Enabled = false;
+
+                        if (loadOldFile)
+                        {
+                            _fileManager.MoveFileBack();
+                            jsonMask = _fileManager.LoadFile(false);
+                        }
 
                         if (_tabView.FindViewById<EditText>(Resource.Id.editText1).Text.Length > 0 &&
                             _tabView.FindViewById<EditText>(Resource.Id.editText2).Text.Length > 0 &&
@@ -95,15 +103,31 @@ namespace visvitalis.Fragments
 
                                 if (patientMission.Text.ToLower().StartsWith("v"))
                                 {
-                                    var lastPatient = listV.Patients[listV.Patients.Count - 1];
-                                    patient.Order = lastPatient.Order + 1;
-                                    listV.Patients.Add(patient);
+                                    if (listV.Patients.Count > 0)
+                                    {
+                                        var lastPatient = listV.Patients[listV.Patients.Count - 1];
+                                        patient.Order = lastPatient.Order + 1;
+                                        listV.Patients.Add(patient);
+                                    }
+                                    else
+                                    {
+                                        patient.Order = 0;
+                                        listV.Patients.Add(patient);
+                                    }
                                 }
                                 else
                                 {
-                                    var lastPatient = listA.Patients[listA.Patients.Count - 1];
-                                    patient.Order = lastPatient.Order + 1;
-                                    listA.Patients.Add(patient);
+                                    if (listA.Patients.Count > 0)
+                                    {
+                                        var lastPatient = listA.Patients[listA.Patients.Count - 1];
+                                        patient.Order = lastPatient.Order + 1;
+                                        listA.Patients.Add(patient);
+                                    }
+                                    else
+                                    {
+                                        patient.Order = 0;
+                                        listA.Patients.Add(patient);
+                                    }
                                 }
 
                                 var jsonContent = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(_patientMask));
@@ -126,7 +150,7 @@ namespace visvitalis.Fragments
                                     await Task.Factory.StartNew(() => Thread.Sleep(400));
 
                                     button.Enabled = true;
-                                    UpdateUserView((tempMission.ToLower().StartsWith("v")) ? 0 : 1);
+                                    UpdateUserView((tempMission.ToLower().StartsWith("v")) ? 0 : 1, false);
                                 }
                             }
                             catch
@@ -145,15 +169,15 @@ namespace visvitalis.Fragments
             }
             catch
             {
-                //Log.Debug("debug", "lol...");
+                Activity.Finish();
             }
         }
 
-        void UpdateUserView(int position)
+        void UpdateUserView(int position, bool loadOldFile)
         {
             if (OnTabNeedSwitchEvent == null)
                 return;
-            OnTabNeedSwitchEvent(position);
+            OnTabNeedSwitchEvent(position, false);
         }
         
         string GetPatientMission(string mission)
