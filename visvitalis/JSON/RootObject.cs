@@ -29,10 +29,10 @@ namespace visvitalis.JSON
         public string MaskNr { get; set; }
         [JsonProperty("groupname")]
         public string Groupname { get; set; }
-        [JsonProperty("datum_start")]
-        public string DatumStart { get; set; }
-        [JsonProperty("datum_end")]
-        public string DatumEnd { get; set; }
+        //[JsonProperty("datum_start")]
+        //public string DatumStart { get; set; } // todo: remove
+        //[JsonProperty("datum_end")]
+        //public string DatumEnd { get; set; } // todo: remove
 
         public override string ToString()
         {

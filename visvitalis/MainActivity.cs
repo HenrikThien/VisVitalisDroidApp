@@ -257,13 +257,27 @@ namespace visvitalis
                         // loop through the whole file.
                         foreach (var operation in mask.PatientMask)
                         {
+                            // if date is != current date, move file to old.data, it can't be edited anyway.
+                            // make sure, the parsed date is correct.
+                            DateTime result;
+                            if (DateTime.TryParseExact(operation.PatientOperation.MaskDate, "ddMMyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out result))
+                            {
+                                if (DateTime.Now.Date != result.Date)
+                                {
+                                    if (!filesToMove.Contains(content.Key))
+                                    {
+                                        filesToMove.Add(content.Key);
+                                    }
+                                }
+                            }
+
                             foreach (var tour in operation.PatientOperation.Tours)
                             {
                                 foreach (var patient in tour.Patients)
                                 {
                                     // count the patients
                                     patientCounter++;
-                                    
+
                                     // checks if the patient needs to be uploaded
                                     if (!string.IsNullOrEmpty(patient.Arrival) &&
                                         !string.IsNullOrEmpty(patient.Departure) &&
@@ -302,7 +316,10 @@ namespace visvitalis
                         // if listOfSended is the same as patientCounter, add file to files which needs to be moved
                         if (listOfSended.Count == patientCounter)
                         {
-                            filesToMove.Add(content.Key);
+                            if (!filesToMove.Contains(content.Key))
+                            {
+                                filesToMove.Add(content.Key);
+                            }
                         }
 
                         // save "sended" states in file
@@ -319,7 +336,7 @@ namespace visvitalis
                     {
                         _progressDialog.Dismiss();
                         _progressDialog = null;
-                        CreateAlert("Fehler", "Es wurden keine Dateien zum Hochladen gefunden!");
+                        CreateAlert("Fehler", "Es wurden keine Daten zum Hochladen gefunden!");
                         return;
                     }
 
@@ -357,7 +374,8 @@ namespace visvitalis
                                 }
                                 catch
                                 {
-                                    CreateAlert("Fehler", "Fehler beim Hochladen der Daten.");
+                                    Toast.MakeText(this, "Daten konnten nicht hochgeladen werden. Eine Datei ist Fehlerhaft.", ToastLength.Long).Show();
+                                    //CreateAlert("Fehler", "Fehler beim Hochladen der Daten.");
                                     _progressDialog.Dismiss();
                                     _progressDialog = null;
                                 }
@@ -378,8 +396,9 @@ namespace visvitalis
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Log.Debug("l/ex", ex.ToString());
                 _progressDialog.Dismiss();
                 _progressDialog = null;
             }

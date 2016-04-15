@@ -71,7 +71,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/button4"
         android:background="#BF211E"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="50dp"
         android:typeface="normal"
         android:textStyle="normal"
         android:fadingEdge="none" />

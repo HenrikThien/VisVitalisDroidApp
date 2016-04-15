@@ -101,9 +101,6 @@ namespace visvitalis.Fragments
 
         public override int GetItemPosition(Java.Lang.Object objectValue)
         {
-            //if(object instanceof FirstPageFragment && mFragmentAtPos0 instanceof NextFragment)
-            //return POSITION_NONE;
-            //return POSITION_UNCHANGED;
             return PositionNone;
         }
 

@@ -240,63 +240,70 @@ namespace visvitalis.Recycler
             };
 
 
-            leistungFailedBtn.Click += async delegate
+            leistungFailedBtn.Click += delegate
             {
-                Toast.MakeText(Activity, "Leistung wurde nicht erbracht.", ToastLength.Short).Show();
+                // todo: test
+                CreateYesNoAlert("Speichern", "Möchten Sie wirklich \"Leistung nicht erbracht\" eintragen?", (async () =>
+                    {
+                        Toast.MakeText(Activity, "Leistung wurde nicht erbracht.", ToastLength.Short).Show();
 
-                patient.Arrival = StartTime;
-                patient.Performances.Clear();
-                patient.Performances.Add(Performance);
+                        patient.Arrival = StartTime;
+                        patient.Performances.Clear();
+                        patient.Performances.Add(Performance);
 
-                var objInList = (_patientList[position]);
-                objInList.Arrival = patient.Arrival;
-                objInList.Performances.Clear();
-                objInList.Performances.Add(Performance);
+                        var objInList = (_patientList[position]);
+                        objInList.Arrival = patient.Arrival;
+                        objInList.Performances.Clear();
+                        objInList.Performances.Add(Performance);
 
-                ankunftBtn.Enabled = false;
-                ankunftBtn.SetBackgroundColor(Color.Black);
-                ankunftBtn.SetTextColor(Color.White);
+                        ankunftBtn.Enabled = false;
+                        ankunftBtn.SetBackgroundColor(Color.Black);
+                        ankunftBtn.SetTextColor(Color.White);
 
-                patient.Departure = EndTime;
-                objInList = (_patientList[position]);
-                objInList.Departure = patient.Departure;
+                        patient.Departure = EndTime;
+                        objInList = (_patientList[position]);
+                        objInList.Departure = patient.Departure;
 
-                abfahrtBtn.Enabled = false;
-                abfahrtBtn.SetBackgroundColor(Color.Black);
-                abfahrtBtn.SetTextColor(Color.White);
+                        abfahrtBtn.Enabled = false;
+                        abfahrtBtn.SetBackgroundColor(Color.Black);
+                        abfahrtBtn.SetTextColor(Color.White);
 
-                patient.Km = Km.ToString();
-                objInList = (_patientList[position]);
-                objInList.Km = Km.ToString();
+                        patient.Km = Km.ToString();
+                        objInList = (_patientList[position]);
+                        objInList.Km = Km.ToString();
 
-                kilometerBtn.Enabled = false;
-                kilometerBtn.SetBackgroundColor(Color.Black);
-                kilometerBtn.SetTextColor(Color.White);
+                        kilometerBtn.Enabled = false;
+                        kilometerBtn.SetBackgroundColor(Color.Black);
+                        kilometerBtn.SetTextColor(Color.White);
 
-                leistungFailedBtn.Enabled = false;
+                        leistungFailedBtn.Enabled = false;
 
-                if (string.IsNullOrEmpty(patient.WorkerToken) && string.IsNullOrEmpty(objInList.WorkerToken))
-                {
-                    patient.WorkerToken = _workerToken;
-                    objInList.WorkerToken = _workerToken;
-                }
+                        if (string.IsNullOrEmpty(patient.WorkerToken) && string.IsNullOrEmpty(objInList.WorkerToken))
+                        {
+                            patient.WorkerToken = _workerToken;
+                            objInList.WorkerToken = _workerToken;
+                        }
 
-                await Task.Factory.StartNew(() =>
-                {
-                    Thread.Sleep(250);
-                    dialog.Dismiss();
-                });
+                        await Task.Factory.StartNew(() =>
+                        {
+                            Thread.Sleep(250);
+                            dialog.Dismiss();
+                        });
 
-                var jsonContent = JsonConvert.SerializeObject(_patientMask);
+                        var jsonContent = JsonConvert.SerializeObject(_patientMask);
 
-                if (!await _fileManager.SaveJsonContentAsync(jsonContent))
-                {
-                    Toast.MakeText(Activity, "Fehler beim Speichern der Datei...", ToastLength.Short).Show();
-                }
-                else
-                {
-                    mAdapter.NotifyDataSetChanged();
-                }
+                        if (!await _fileManager.SaveJsonContentAsync(jsonContent))
+                        {
+                            Toast.MakeText(Activity, "Fehler beim Speichern der Datei...", ToastLength.Short).Show();
+                        }
+                        else
+                        {
+                            mAdapter.NotifyDataSetChanged();
+                        }
+                    }), (() =>
+                    {
+
+                    }));
             };
 
             ankunftBtn.Click += async delegate
@@ -465,6 +472,16 @@ namespace visvitalis.Recycler
                     mAdapter.NotifyDataSetChanged();
                 }
             };
+        }
+
+        private void CreateYesNoAlert(string title, string message, Action YesAction, Action NoAction)
+        {
+            var alert = new AlertDialog.Builder(Activity);
+            alert.SetTitle(title);
+            alert.SetMessage(message);
+            alert.SetPositiveButton("Ja", (sender, args) => { YesAction(); });
+            alert.SetNegativeButton("Nein", (sender, args) => { NoAction(); });
+            alert.Show();
         }
     }
 }
