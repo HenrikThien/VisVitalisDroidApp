@@ -162,6 +162,7 @@ namespace visvitalis.Fragments
                         else
                         {
                             CreateAlert("Fehler", "Die Felder müssen korrekt ausgefüllt werden.");
+                            button.Enabled = true; // fixed, dann muss die activity nicht neu geladen werden.
                             return;
                         }
                     };

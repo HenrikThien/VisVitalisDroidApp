@@ -16,6 +16,8 @@ using Android.Support.V7.Widget;
 using Android.Graphics;
 using System.Threading;
 using Android.Preferences;
+using Android.Views.InputMethods;
+using Android.Util;
 
 namespace visvitalis.Recycler
 {
@@ -242,8 +244,7 @@ namespace visvitalis.Recycler
 
             leistungFailedBtn.Click += delegate
             {
-                // todo: test
-                CreateYesNoAlert("Speichern", "Möchten Sie wirklich \"Leistung nicht erbracht\" eintragen?", (async () =>
+                CreateYesNoAlert("Leistung speichern", "Möchten Sie wirklich \"Leistung nicht erbracht\" eintragen?", (async () =>
                     {
                         Toast.MakeText(Activity, "Leistung wurde nicht erbracht.", ToastLength.Short).Show();
 
@@ -302,13 +303,18 @@ namespace visvitalis.Recycler
                         }
                     }), (() =>
                     {
-
+                        // no action here?
                     }));
             };
 
             ankunftBtn.Click += async delegate
             {
-                Toast.MakeText(Activity, "Ankunftszeit gespeichert", ToastLength.Short).Show();
+                // zeiten können frei eingetragen werden
+                if (patient.Nr == 1 || patient.Nr == 2)
+                {
+                    CreateTextBoxAlert("Mitarbeiter Eingabe", patient, position, ankunftBtn, dialog, true);
+                    return;
+                }
 
                 if (string.IsNullOrEmpty(patient.Arrival))
                 {
@@ -342,6 +348,7 @@ namespace visvitalis.Recycler
                 }
                 else
                 {
+                    Toast.MakeText(Activity, "Ankunftszeit gespeichert", ToastLength.Short).Show();
                     mAdapter.NotifyDataSetChanged();
                 }
             };
@@ -354,7 +361,12 @@ namespace visvitalis.Recycler
                     return;
                 }
 
-                Toast.MakeText(Activity, "Abfahrtszeit gespeichert", ToastLength.Short).Show();
+                // zeiten können frei eingetragen werden
+                if (patient.Nr == 1 || patient.Nr == 2)
+                {
+                    CreateTextBoxAlert("Mitarbeiter Eingabe", patient, position, ankunftBtn, dialog, false);
+                    return;
+                }
 
                 if (string.IsNullOrEmpty(patient.Departure))
                 {
@@ -388,6 +400,7 @@ namespace visvitalis.Recycler
                 }
                 else
                 {
+                    Toast.MakeText(Activity, "Abfahrtszeit gespeichert", ToastLength.Short).Show();
                     mAdapter.NotifyDataSetChanged();
                 }
             };
@@ -482,6 +495,118 @@ namespace visvitalis.Recycler
             alert.SetPositiveButton("Ja", (sender, args) => { YesAction(); });
             alert.SetNegativeButton("Nein", (sender, args) => { NoAction(); });
             alert.Show();
+        }
+
+        private void CreateTextBoxAlert(string title, Patient patientToSave, int position, Button btnToChange, AlertDialog parentDialog, bool arrival)
+        {
+            var inputDialog = new AlertDialog.Builder(Activity);
+            EditText userInput = new EditText(Activity);
+            userInput.InputType = Android.Text.InputTypes.ClassDatetime;
+            userInput.Hint = "Format: hh:mm (z.B 15:30)";
+
+            inputDialog.SetCancelable(false);
+            inputDialog.SetTitle(title);
+            inputDialog.SetView(userInput);
+            inputDialog.SetPositiveButton(
+                "Speichern",
+                async (see, ess) =>
+                {
+                    string dateInput = userInput.Text;
+                    if (dateInput != string.Empty)
+                    {
+                        if (dateInput.IndexOf(':') != -1)
+                        {
+                            int hour = int.Parse(dateInput.Split(':')[0]);
+                            int minute = int.Parse(dateInput.Split(':')[1]);
+
+                            if ((hour >= 0 && hour <= 24) && (minute >= 0 && minute <= 59))
+                            {
+                                if (arrival)
+                                {
+                                    patientToSave.Arrival = dateInput.ToString();
+                                    var objInList = (_patientList[position]);
+                                    objInList.Arrival = patientToSave.Arrival;
+
+                                    if (string.IsNullOrEmpty(patientToSave.WorkerToken) && string.IsNullOrEmpty(objInList.WorkerToken))
+                                    {
+                                        patientToSave.WorkerToken = _workerToken;
+                                        objInList.WorkerToken = _workerToken;
+                                    }
+
+                                    btnToChange.Text = "Gespeichert! Schließe...Bitte warten";
+                                    btnToChange.Enabled = false;
+                                    btnToChange.SetBackgroundColor(Color.Black);
+                                    btnToChange.SetTextColor(Color.White);
+                                }
+                                else
+                                {
+                                    patientToSave.Departure = dateInput.ToString();
+                                    var objInList = (_patientList[position]);
+                                    objInList.Departure = patientToSave.Departure;
+
+                                    if (string.IsNullOrEmpty(patientToSave.WorkerToken) && string.IsNullOrEmpty(objInList.WorkerToken))
+                                    {
+                                        patientToSave.WorkerToken = _workerToken;
+                                        objInList.WorkerToken = _workerToken;
+                                    }
+
+                                    btnToChange.Text = "Gespeichert! Schließe...Bitte warten";
+                                    btnToChange.Enabled = false;
+                                    btnToChange.SetBackgroundColor(Color.Black);
+                                    btnToChange.SetTextColor(Color.White);
+                                }
+
+                                await Task.Factory.StartNew(() =>
+                                {
+                                    Thread.Sleep(250);
+                                    inputDialog.Dispose();
+                                    parentDialog.Dismiss();
+                                });
+
+                                var jsonContent = JsonConvert.SerializeObject(_patientMask);
+
+                                if (!await _fileManager.SaveJsonContentAsync(jsonContent))
+                                {
+                                    Toast.MakeText(Activity, "Fehler beim Speichern der Datei...", ToastLength.Short).Show();
+                                }
+                                else
+                                {
+                                    string zeit = (arrival) ? "Ankunftszeit" : "Abfahrtszeit";
+                                    Toast.MakeText(Activity, zeit + " gespeichert", ToastLength.Short).Show();
+                                    mAdapter.NotifyDataSetChanged();
+                                }
+                                HideKeyboard(userInput);
+                            }
+                            else
+                            {
+                                Toast.MakeText(this.Activity, "Die Zeit ist nicht realistisch.", ToastLength.Short).Show();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Toast.MakeText(this.Activity, "Es muss eine Zeit zum Speichern angegeben werden.", ToastLength.Short).Show();
+                    }
+
+                    HideKeyboard(userInput);
+                });
+
+            inputDialog.SetNegativeButton("Abbrechen", (afk, kfa) => { HideKeyboard(userInput); });
+            inputDialog.Show();
+            ShowKeyboard(userInput);
+        }
+
+        private void ShowKeyboard(EditText userInput)
+        {
+            userInput.RequestFocus();
+            InputMethodManager imm = (InputMethodManager)this.Activity.GetSystemService(Context.InputMethodService);
+            imm.ToggleSoftInput(ShowFlags.Forced, 0);
+        }
+
+        private void HideKeyboard(EditText userInput)
+        {
+            InputMethodManager imm = (InputMethodManager)this.Activity.GetSystemService(Context.InputMethodService);
+            imm.HideSoftInputFromWindow(userInput.WindowToken, 0);
         }
     }
 }
