@@ -1,0 +1,1 @@
+TODO: wenn die Mitarbeiter ihr Kürzel eingeben, alle Leerzeichen / \n entfernen!!
